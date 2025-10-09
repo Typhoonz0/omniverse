@@ -30,7 +30,7 @@ npm start
 - [x] Customizable UI
 - [x] Leaderboard scraper
 - [x] Auto Fullscreen
-- [] Aimbot soon trust 
+- [ ] Aimbot soon trust 
 
 ## How to swap your guns:
 Replace the example images inside the `swap/` directory, and reload  the client. Make sure the names are EXACTLY the same as below.
