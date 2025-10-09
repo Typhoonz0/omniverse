@@ -3,7 +3,6 @@
 //(  O )/ \/ \/    / )( \ \/ / ) _)  )   /\___ \ ) _)   v1.0.51
 // \__/ \_)(_/\_)__)(__) \__/ (____)(__\_)(____/(____)
 //
-// ONLY DOWNLOAD THIS FROM xliam.space, https://greasyfork.org/en/scripts/551924-omniverse, OR DIRECTLY FROM ME
 // DO NOT DISTRIBUTE WITHOUT CREDIT
 
 // CREDITS:
@@ -11,7 +10,9 @@
 // Crosshair Editor: https://greasyfork.org/en/scripts/551511-deadshot-io-stylish-crosshair-overlay-persistent-settings
 // Leaderboard Inspiration: https://greasyfork.org/en/scripts/518544-vortex-forge-deadshot-io
 
+import commitData from "commit.json"; // adjust path if needed
 (() => {
+    
     'use strict';
 
     /* -------------------------
@@ -578,13 +579,50 @@
         location.reload();
     });
 
-    // Update button (open GreasyFork)
-    const updateBtn = el('button', { text: 'Update Omniverse' });
-    Object.assign(updateBtn.style, { padding: '6px 12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', background: '#ff9800', color: '#fff' });
-    gui.appendChild(updateBtn);
-    updateBtn.addEventListener('click', () => {
-        window.open('https://greasyfork.org/scripts/551924-omniverse', '_blank');
+
+
+    const currentCommit = commitData.commit;
+
+    const updateBtn = el('button', { text: 'Checking updates...' });
+    Object.assign(updateBtn.style, { 
+        padding: '6px 12px', 
+        border: 'none', 
+        borderRadius: '6px', 
+        cursor: 'pointer', 
+        fontWeight: 'bold', 
+        background: '#ff9800', 
+        color: '#fff' 
     });
+    gui.appendChild(updateBtn);
+
+    const repoOwner = "Typhoonz0";
+    const repoName = "omniverse";
+
+    async function checkForUpdates() {
+        try {
+            const res = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/commits/main`);
+            const data = await res.json();
+            const latestCommit = data.sha;
+
+            if (latestCommit !== currentCommit) {
+                updateBtn.textContent = "Update Available!";
+                updateBtn.style.background = "#4caf50";
+                updateBtn.addEventListener('click', () => {
+                    window.open(`https://github.com/${repoOwner}/${repoName}`, '_blank');
+                });
+            } else {
+                updateBtn.textContent = "Up to Date";
+                updateBtn.style.background = "#2196f3";
+                updateBtn.disabled = true;
+            }
+        } catch (err) {
+            console.error("Update check failed:", err);
+            updateBtn.textContent = "Update Check Failed";
+            updateBtn.style.background = "#f44336";
+        }
+    }
+
+    checkForUpdates();
 
     // Helper to update visibility and button text/style
     function updateVisibility(id, settingsId) {

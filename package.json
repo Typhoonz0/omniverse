@@ -5,13 +5,15 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "prepackage": "node write-commit.js",
     "package": "electron-packager . deadshot-viewer --platform=linux,win32,darwin --arch=x64 --out=dist --overwrite"
   },
+
   "devDependencies": {
     "electron": "^26.6.10"
   },
   "dependencies": {
-
+    "electron": "^26.6.10",
     "@cliqz/adblocker-electron": "^1.34.0",
     "cross-fetch": "^4.1.0"
   }
