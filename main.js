@@ -1,4 +1,5 @@
 const { app, BrowserWindow, protocol } = require('electron');
+
 const path = require('path');
 const fs = require('fs');
 const { ElectronBlocker } = require('@cliqz/adblocker-electron');
@@ -11,7 +12,9 @@ const createWindow = () => {
         show: true,
         title: 'Deadshot.io',
         fullscreen: true,
+        
         webPreferences: {
+  //          preload: path.join(__dirname, 'preload.js'),
             contextIsolation: false,
             enableRemoteModule: true,
             sandbox: false

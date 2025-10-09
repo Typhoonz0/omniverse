@@ -1,6 +1,6 @@
 //  __   _  _  __ _  __  _  _  ____  ____  ____  ____
 // /  \ ( \/ )(  ( \(  )/ )( \(  __)(  _ \/ ___)(  __)
-//(  O )/ \/ \/    / )( \ \/ / ) _)  )   /\___ \ ) _)   v1.0.51
+//(  O )/ \/ \/    / )( \ \/ / ) _)  )   /\___ \ ) _)   Userscript v1.0.51
 // \__/ \_)(_/\_)__)(__) \__/ (____)(__\_)(____/(____)
 //
 // DO NOT DISTRIBUTE WITHOUT CREDIT
@@ -578,39 +578,34 @@
         location.reload();
     });
 
-
-    const fs = require('fs');
-    const path = require('path');
-
+    // Create the update button
     const updateBtn = el('button', { text: 'Checking updates...' });
-    Object.assign(updateBtn.style, { 
-        padding: '6px 12px', 
-        border: 'none', 
-        borderRadius: '6px', 
-        cursor: 'pointer', 
-        fontWeight: 'bold', 
-        background: '#ff9800', 
-        color: '#fff' 
+    Object.assign(updateBtn.style, {
+        padding: '6px 12px',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontWeight: 'bold',
+        background: '#ff9800',
+        color: '#fff'
     });
+    // Append it to the existing GUI container
     gui.appendChild(updateBtn);
 
-    const localVersionFile = path.join(__dirname, 'version.txt');
 
     async function checkForUpdates() {
         try {
-            const res = await fetch(`https://raw.githubusercontent.com/Typhoonz0/omniverse/main/version.txt`);
+            // Fetch latest version from GitHub
+            const res = await fetch('https://raw.githubusercontent.com/Typhoonz0/omniverse/main/version.txt');
             const remoteVersion = (await res.text()).trim();
 
-            let localVersion = '0.0.0';
-            if (fs.existsSync(localVersionFile)) {
-                localVersion = fs.readFileSync(localVersionFile, 'utf8').trim();
-            }
+            let localVersion = '0.2'; // fuckass node wont work unless i have localversion here and in version.txt
 
             if (remoteVersion !== localVersion) {
                 updateBtn.textContent = "Update Available!";
                 updateBtn.style.background = "#4caf50";
                 updateBtn.addEventListener('click', () => {
-                    window.open(`https://github.com/Typhoonz0/omniverse`, '_blank');
+                    window.open('https://github.com/Typhoonz0/omniverse', '_blank');
                 });
             } else {
                 updateBtn.textContent = "Up to Date";
@@ -624,7 +619,9 @@
         }
     }
 
+    // Run update check after GUI has loaded
     checkForUpdates();
+
 
 
     // Helper to update visibility and button text/style
