@@ -10,7 +10,6 @@
 // Crosshair Editor: https://greasyfork.org/en/scripts/551511-deadshot-io-stylish-crosshair-overlay-persistent-settings
 // Leaderboard Inspiration: https://greasyfork.org/en/scripts/518544-vortex-forge-deadshot-io
 
-import commitData from "commit.json"; // adjust path if needed
 (() => {
     
     'use strict';
@@ -580,8 +579,8 @@ import commitData from "commit.json"; // adjust path if needed
     });
 
 
-
-    const currentCommit = commitData.commit;
+    const fs = require('fs');
+    const path = require('path');
 
     const updateBtn = el('button', { text: 'Checking updates...' });
     Object.assign(updateBtn.style, { 
@@ -595,20 +594,23 @@ import commitData from "commit.json"; // adjust path if needed
     });
     gui.appendChild(updateBtn);
 
-    const repoOwner = "Typhoonz0";
-    const repoName = "omniverse";
+    const localVersionFile = path.join(__dirname, 'version.txt');
 
     async function checkForUpdates() {
         try {
-            const res = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/commits/main`);
-            const data = await res.json();
-            const latestCommit = data.sha;
+            const res = await fetch(`https://raw.githubusercontent.com/Typhoonz0/omniverse/main/version.txt`);
+            const remoteVersion = (await res.text()).trim();
 
-            if (latestCommit !== currentCommit) {
+            let localVersion = '0.0.0';
+            if (fs.existsSync(localVersionFile)) {
+                localVersion = fs.readFileSync(localVersionFile, 'utf8').trim();
+            }
+
+            if (remoteVersion !== localVersion) {
                 updateBtn.textContent = "Update Available!";
                 updateBtn.style.background = "#4caf50";
                 updateBtn.addEventListener('click', () => {
-                    window.open(`https://github.com/${repoOwner}/${repoName}`, '_blank');
+                    window.open(`https://github.com/Typhoonz0/omniverse`, '_blank');
                 });
             } else {
                 updateBtn.textContent = "Up to Date";
@@ -623,6 +625,7 @@ import commitData from "commit.json"; // adjust path if needed
     }
 
     checkForUpdates();
+
 
     // Helper to update visibility and button text/style
     function updateVisibility(id, settingsId) {
