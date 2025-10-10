@@ -57,6 +57,40 @@
         document.head.appendChild(s);
         return s;
     }
+    let skincss = `
+@import 'https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap';
+    *{
+        margin:0;
+        padding:0;
+        box-sizing:border-box;
+        font-family:'DM Sans',sans-serif
+    }`
+    injectStyle(skincss)
+
+    function findLogoElements() {
+        const results = [];
+
+        // 1. Check all <img> elements
+        document.querySelectorAll('img').forEach(img => {
+            if (img.src.includes('promo/logo.webp')) {
+                results.push(img);
+            }
+        });
+
+        // 2. Check all elements with background images
+        document.querySelectorAll('*').forEach(el => {
+            const bg = getComputedStyle(el).backgroundImage;
+            if (bg && bg.includes('promo/logo.webp')) {
+                results.push(el);
+            }
+        });
+
+        return results;
+    }
+
+    // Example usage:
+    const logoElements = findLogoElements();
+    console.log('Found logo elements:', logoElements);
 
     function el(tag, opts = {}) {
         const e = document.createElement(tag);
@@ -559,10 +593,73 @@
     Object.assign(fetchRankBtn.style, { padding: '6px 12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', background: '#2196f3', color: '#fff' });
     gui.appendChild(fetchRankBtn);
     fetchRankBtn.addEventListener('click', async () => {
-        const username = prompt("Enter your username:");
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = 0;
+    overlay.style.left = 0;
+    overlay.style.width = '100vw';
+    overlay.style.height = '100vh';
+    overlay.style.background = 'rgba(0,0,0,0.6)';
+    overlay.style.display = 'flex';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    overlay.style.zIndex = 9999;
+
+    const box = document.createElement('div');
+    box.style.background = '#1e1e1e';
+    box.style.padding = '30px';
+    box.style.borderRadius = '10px';
+    box.style.boxShadow = '0 0 20px rgba(0,0,0,0.5)';
+    box.style.textAlign = 'center';
+    box.style.color = 'white';
+    box.style.fontFamily = 'Arial, sans-serif';
+
+    const label = document.createElement('div');
+    label.textContent = 'Enter your username:';
+    label.style.marginBottom = '10px';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.style.padding = '10px';
+    input.style.borderRadius = '5px';
+    input.style.border = 'none';
+    input.style.width = '200px';
+    input.style.marginBottom = '10px';
+    input.style.fontSize = '16px';
+
+    const submit = document.createElement('button');
+    submit.textContent = 'Submit';
+    submit.style.padding = '10px 20px';
+    submit.style.border = 'none';
+    submit.style.borderRadius = '5px';
+    submit.style.background = '#4CAF50';
+    submit.style.color = 'white';
+    submit.style.cursor = 'pointer';
+    submit.style.fontSize = '16px';
+
+    submit.addEventListener('click', async () => {
+        const username = input.value.trim();
+        console.log(username);
         if (!username) return;
-        const rank = await fetchLeaderboardRank(username);
-        alert(`${rank}`);
+
+        try {
+            const rank = await fetchLeaderboardRank(username);
+            alert(`${rank}`);
+            document.body.removeChild(overlay);
+        } catch (err) {
+            console.error('Failed to fetch leaderboard rank:', err);
+            alert('Failed to fetch rank');
+            document.body.removeChild(overlay);
+        }
+    });
+
+
+    box.appendChild(label);
+    box.appendChild(input);
+    box.appendChild(submit);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    input.focus();
     });
 
     // Reset button
@@ -599,7 +696,7 @@
             const res = await fetch('https://raw.githubusercontent.com/Typhoonz0/omniverse/main/version.txt');
             const remoteVersion = (await res.text()).trim();
 
-            let localVersion = '0.2'; // fuckass node wont work unless i have localversion here and in version.txt
+            let localVersion = '0.3'; // fuckass node wont work unless i have localversion here and in version.txt
 
             if (remoteVersion !== localVersion) {
                 updateBtn.textContent = "Update Available!";
@@ -674,6 +771,7 @@
     });
 
     async function fetchLeaderboardRank(username) {
+        console.log('aa');
         try {
             const response = await fetch('https://login.deadshot.io/leaderboards');
             const data = await response.json();
