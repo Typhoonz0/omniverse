@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const { ElectronBlocker } = require('@cliqz/adblocker-electron');
 const fetch = require('cross-fetch');
-
+const adblock = false; // if ur smart enough to look through the code the adblocker is here
 let gameWindow;
 
 const createWindow = () => {
@@ -14,7 +14,6 @@ const createWindow = () => {
         fullscreen: true,
         
         webPreferences: {
-  //          preload: path.join(__dirname, 'preload.js'),
             contextIsolation: false,
             enableRemoteModule: true,
             sandbox: false
@@ -74,17 +73,18 @@ app.whenReady().then(() => {
             next({ cancel: false });
         }
     });
+    if (adblock) {
     // adblocker is being dum so cant use it atm
-    //ElectronBlocker.fromPrebuiltAdsAndTracking(fetch).then((blocker) => {
-    //    // Disable blocking for deadshot.io assets
-    //    blocker.on('request-blocked', (details) => {
-    //        if (details.url.includes('deadshot.io')) {
-    //            blocker.disableBlockingInSession(gameWindow.webContents.session);
-    //        }
-    //    });
-    //    blocker.enableBlockingInSession(gameWindow.webContents.session);
-    //});
+    ElectronBlocker.fromPrebuiltAdsAndTracking(fetch).then((blocker) => {
 
+        blocker.on('request-blocked', (details) => {
+            if (details.url.includes('deadshot.io')) {
+                blocker.disableBlockingInSession(gameWindow.webContents.session);
+            }
+        });
+        blocker.enableBlockingInSession(gameWindow.webContents.session);
+    });
+    }
 });
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();

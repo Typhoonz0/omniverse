@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron .",
     "dist-win": "electron-packager . omniverse --platform=win32 --arch=x64 --out=dist --overwrite",
-    "dist-linux": "electron-packager . omniverse --platform=linux,win32,darwin --arch=x64 --out=dist --overwrite"
+    "dist-linux": "electron-packager . omniverse --platform=linux --arch=x64 --out=dist --overwrite"
   },
 
   "devDependencies": {
