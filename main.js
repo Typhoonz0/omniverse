@@ -7,8 +7,8 @@ const fetch = require('cross-fetch');
 
 const adblock = false; // if ur smart enough to look through the code the adblocker is here
 let gameWindow;
-app.commandLine.appendSwitch('disable-frame-rate-limit');
-app.commandLine.appendSwitch('force_high_performance_gpu');
+//app.commandLine.appendSwitch('disable-frame-rate-limit');
+//app.commandLine.appendSwitch('force_high_performance_gpu');
 
 const clientId = '1426074176518881373';
 let rpcClient;
