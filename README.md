@@ -7,7 +7,7 @@
 
 <p align="center">
   <img src="github/image.png">
-  <i>Preview of Omniverse 0.2</i>
+  <i>Preview of Omniverse 0.4</i>
 </p>
 
 

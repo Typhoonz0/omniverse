@@ -1,6 +1,6 @@
 //  __   _  _  __ _  __  _  _  ____  ____  ____  ____
 // /  \ ( \/ )(  ( \(  )/ )( \(  __)(  _ \/ ___)(  __)
-//(  O )/ \/ \/    / )( \ \/ / ) _)  )   /\___ \ ) _)   Userscript v1.0.51
+//(  O )/ \/ \/    / )( \ \/ / ) _)  )   /\___ \ ) _) 
 // \__/ \_)(_/\_)__)(__) \__/ (____)(__\_)(____/(____)
 //
 // DO NOT DISTRIBUTE WITHOUT CREDIT
@@ -11,7 +11,7 @@
 // Leaderboard Inspiration: https://greasyfork.org/en/scripts/518544-vortex-forge-deadshot-io
 
 (() => {
-    
+
     'use strict';
 
     /* -------------------------
@@ -19,33 +19,45 @@
        ------------------------- */
     const storage = {
         set(key, value) {
-            try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+            try {
+                localStorage.setItem(key, JSON.stringify(value));
+            } catch {}
         },
         get(key, defaultVal = null) {
             try {
                 const raw = localStorage.getItem(key);
                 return raw ? JSON.parse(raw) : defaultVal;
-            } catch { return defaultVal; }
+            } catch {
+                return defaultVal;
+            }
         },
         setRaw(key, value) {
-            try { localStorage.setItem(key, value); } catch {}
+            try {
+                localStorage.setItem(key, value);
+            } catch {}
         },
         getRaw(key, defaultVal = null) {
             try {
                 const raw = localStorage.getItem(key);
                 return raw === null ? defaultVal : raw;
-            } catch { return defaultVal; }
+            } catch {
+                return defaultVal;
+            }
         },
         remove(key) {
-            try { localStorage.removeItem(key); } catch {}
+            try {
+                localStorage.removeItem(key);
+            } catch {}
+        },
+        loadPosition(key) {
+            return storage.get(`${key}_pos`, null);
+        },
+        savePosition(key, x, y) {
+            storage.set(`${key}_pos`, {
+                x,
+                y
+            });
         }
-    };
-
-    function savePosition(key, x, y) {
-        storage.set(`${key}_pos`, { x, y });
-    }
-    function loadPosition(key) {
-        return storage.get(`${key}_pos`, null);
     }
 
     /* -------------------------
@@ -57,40 +69,7 @@
         document.head.appendChild(s);
         return s;
     }
-    let skincss = `
-@import 'https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap';
-    *{
-        margin:0;
-        padding:0;
-        box-sizing:border-box;
-        font-family:'DM Sans',sans-serif
-    }`
-    injectStyle(skincss)
 
-    function findLogoElements() {
-        const results = [];
-
-        // 1. Check all <img> elements
-        document.querySelectorAll('img').forEach(img => {
-            if (img.src.includes('promo/logo.webp')) {
-                results.push(img);
-            }
-        });
-
-        // 2. Check all elements with background images
-        document.querySelectorAll('*').forEach(el => {
-            const bg = getComputedStyle(el).backgroundImage;
-            if (bg && bg.includes('promo/logo.webp')) {
-                results.push(el);
-            }
-        });
-
-        return results;
-    }
-
-    // Example usage:
-    const logoElements = findLogoElements();
-    console.log('Found logo elements:', logoElements);
 
     function el(tag, opts = {}) {
         const e = document.createElement(tag);
@@ -137,7 +116,7 @@
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             targetEl.style.left = (clientX - offsetX) + 'px';
-            targetEl.style.top  = (clientY - offsetY) + 'px';
+            targetEl.style.top = (clientY - offsetY) + 'px';
             targetEl.style.right = 'auto';
         }
 
@@ -145,25 +124,32 @@
             if (!dragging) return;
             dragging = false;
             if (storageKey) {
-                savePosition(storageKey, targetEl.offsetLeft, targetEl.offsetTop);
-                onSave({ x: targetEl.offsetLeft, y: targetEl.offsetTop });
+                storage.savePosition(storageKey, targetEl.offsetLeft, targetEl.offsetTop);
+                onSave({
+                    x: targetEl.offsetLeft,
+                    y: targetEl.offsetTop
+                });
             }
         }
 
         handle.addEventListener('mousedown', start);
-        handle.addEventListener('touchstart', start, { passive: false });
+        handle.addEventListener('touchstart', start, {
+            passive: false
+        });
         window.addEventListener('mousemove', move);
-        window.addEventListener('touchmove', move, { passive: false });
+        window.addEventListener('touchmove', move, {
+            passive: false
+        });
         window.addEventListener('mouseup', end);
         window.addEventListener('touchend', end);
 
         // restore pos if any
         if (storageKey) {
-            const pos = loadPosition(storageKey);
+            const pos = storage.loadPosition(storageKey);
             if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
                 try {
                     targetEl.style.left = pos.x + 'px';
-                    targetEl.style.top  = pos.y + 'px';
+                    targetEl.style.top = pos.y + 'px';
                     targetEl.style.right = 'auto';
                 } catch {}
             }
@@ -180,7 +166,78 @@
             }
         };
     }
+    const themes = {
+        default: {
+            red1: '#FF4C4C',
+            red2: '#c52424',
+            red3: '#f44336',
+            yellow1: '#ff9800',
+            green1: '#4caf50',
+            blue1: '#2196f3',
+            purple1: '#9c27b0',
+            text1: '#ffffff'
+        },
+        dark: {
+            red1: '#ff4d4d',
+            red2: '#b71c1c',
+            red3: '#8b0000',
+            yellow1: '#f57f17',
+            green1: '#2e7d32',
+            blue1: '#0d47a1',
+            purple1: '#4a148c',
+            text1: '#e0e0e0'
+        },
+        catppuccin: {
+            red1: '#181926',
+            red2: '#6e738d',
+            red3: '#363a4f',
+            yellow1: '#494d64',
+            green1: '#5b6078',
+            blue1: '#8087a2',
+            purple1: '#4c4f69',
+            text1: '#b7bdf8'
+        },
+        neon: {
+            red1: '#ff0055',
+            red2: '#c70039',
+            red3: '#ff3366',
+            yellow1: '#ffcc00',
+            green1: '#00ff99',
+            blue1: '#00ccff',
+            purple1: '#cc33ff',
+            text1: '#ffffff'
+        }
+    };
 
+    let themeRaw = storage.getRaw('theme');
+    let theme;
+    let currentPreset;
+
+    try {
+        if (!themeRaw) {
+            theme = { ...themes.default };
+            currentPreset = 'default';
+        } else if (themes[themeRaw]) {
+            theme = { ...themes[themeRaw] };
+            currentPreset = themeRaw;
+        } else {
+            theme = JSON.parse(themeRaw);
+            currentPreset = 'custom';
+        }
+    } catch {
+        theme = { ...themes.default };
+        currentPreset = 'default';
+    }
+
+    let skincss = `
+    @import 'https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap';
+    *{
+        margin:0;
+        padding:0;
+        box-sizing:border-box;
+        font-family:'DM Sans',sans-serif
+    }`
+    injectStyle(skincss)
     /* -------------------------
        Component: Stats Overlay
        ------------------------- */
@@ -193,21 +250,25 @@
         background: rgba(0, 0, 0, 0.4);
         padding: 12px;
         border-radius: 10px;
-        color: white;
-        border: 3px solid #FF4C4C;
+        color: ${theme.text1};
+        border: 3px solid ${theme.red1};
         z-index: 99999;
         cursor: move;
         white-space: nowrap;
     }`;
     injectStyle(statsCSS);
 
-    const overlayStats = el('div', { id: 'dsOverlayStats', text: 'Loading stats...' });
+    const overlayStats = el('div', {
+        id: 'dsOverlayStats',
+        text: 'Loading stats...'
+    });
     document.body.appendChild(overlayStats);
 
     // FPS calc
     let fps = 0;
     (function fpsLoop() {
         let last = performance.now();
+
         function tick() {
             const now = performance.now();
             fps = Math.round(1000 / (now - last));
@@ -222,37 +283,49 @@
     async function updatePing() {
         const start = performance.now();
         try {
-            await fetch("https://deadshot.io/favicon.ico", { method: "HEAD", cache: "no-store" });
+            await fetch("https://deadshot.io/favicon.ico", {
+                method: "HEAD",
+                cache: "no-store"
+            });
             ping = Math.round(performance.now() - start);
         } catch {
             ping = -1;
         }
     }
 
-    function getRAM() {
-        return navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'N/A';
-    }
+
     function getCPU() {
         return navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} cores` : 'N/A';
     }
+
     function getOS() {
         return navigator.platform ? `${navigator.platform}` : 'N/A';
     }
-
     // update loop (1s)
     setInterval(() => {
-        overlayStats.innerHTML = `
-            OS: ${getOS()}<br>
-            CPU: ${getCPU()}<br>
-            RAM: ${getRAM()}<br>
-            FPS: ${fps}<br>
-            Ping: ${ping === -1 ? 'offline' : ping + ' ms'}
-        `;
+        const minimalMode = storage.getRaw("minimalstats") === "true";
+
+        if (minimalMode) {
+            overlayStats.innerHTML = `
+                FPS: ${fps}<br>
+                Ping: ${ping === -1 ? 'offline' : ping + ' ms'}
+            `;
+        } else {
+            overlayStats.innerHTML = `
+                OS: ${getOS()}<br>
+                CPU: ${getCPU()}<br>
+                FPS: ${fps}<br>
+                Ping: ${ping === -1 ? 'offline' : ping + ' ms'}
+            `;
+        }
+
         updatePing();
     }, 1000);
 
     // make draggable and persist
-    makeDraggable(overlayStats, { storageKey: 'dsOverlayStats' });
+    makeDraggable(overlayStats, {
+        storageKey: 'dsOverlayStats'
+    });
 
     /* -------------------------
        Component: Keys Overlay
@@ -262,13 +335,28 @@
         'a', 's', 'd', 'mouseleft', 'mouseright'
     ];
     const keyLabels = {
-        'w': 'W', 'a': 'A', 's': 'S', 'd': 'D', 'r': 'R', ' ': '␣',
-        'shift': '🠭', 'c': 'C', 'mouseleft': 'LMB', 'mouseright': 'RMB'
+        'w': 'W',
+        'a': 'A',
+        's': 'S',
+        'd': 'D',
+        'r': 'R',
+        ' ': '␣',
+        'shift': '🠭',
+        'c': 'C',
+        'mouseleft': 'LMB',
+        'mouseright': 'RMB'
     };
     const keyColors = {
-        'w': '#FF4C4C','a': '#FF4C4C','s': '#FF4C4C','d': '#FF4C4C',
-        'r': '#c52424',' ': '#c52424','shift': '#c52424','c': '#c52424',
-        'mouseleft': '#c52424','mouseright': '#c52424'
+        'w': theme.red1,
+        'a': theme.red1,
+        's': theme.red1,
+        'd': theme.red1,
+        'r': theme.red2,
+        ' ': theme.red2,
+        'shift': theme.red2,
+        'c': theme.red2,
+        'mouseleft': theme.red2,
+        'mouseright': theme.red2
     };
 
     const styleKeys = `
@@ -282,7 +370,7 @@
         background: rgba(0, 0, 0, 0.4);
         padding: 12px;
         border-radius: 10px;
-        border: 3px solid #FF4C4C;
+        border: 3px solid #${theme.red1};
         z-index: 99999;
         cursor: move;
     }
@@ -296,7 +384,7 @@
         border-radius: 6px;
         font-size: 16px;
         font-weight: bold;
-        color: white;
+        color: ${theme.text1};
         background-color: transparent;
         transition: background-color 0.15s, transform 0.15s, box-shadow 0.15s;
         user-select: none;
@@ -307,22 +395,33 @@
     }`;
     injectStyle(styleKeys);
 
-    const keyContainer = el('div', { id: 'keyDisplayOverlay' });
+    const keyContainer = el('div', {
+        id: 'keyDisplayOverlay'
+    });
     document.body.appendChild(keyContainer);
 
     const keyElements = {};
     keys.forEach(k => {
         const lower = k.toLowerCase();
-        const d = el('div', { cls: 'keyDisplay', text: keyLabels[lower] || lower.toUpperCase() });
+        const d = el('div', {
+            cls: 'keyDisplay',
+            text: keyLabels[lower] || lower.toUpperCase()
+        });
         d.style.borderColor = keyColors[lower] || '#fff';
         keyContainer.appendChild(d);
-        keyElements[lower] = { el: d, color: keyColors[lower] || '#c52424' };
+        keyElements[lower] = {
+            el: d,
+            color: keyColors[lower] || theme.red2
+        };
     });
 
     function handleKey(action, key) {
         const entry = keyElements[key];
         if (!entry) return;
-        const { el: e, color } = entry;
+        const {
+            el: e,
+            color
+        } = entry;
         if (action === 'down') {
             e.classList.add('pressed');
             e.style.backgroundColor = color;
@@ -355,7 +454,9 @@
         if (e.button === 2) handleKey('up', 'mouseright');
     });
 
-    makeDraggable(keyContainer, { storageKey: 'keyDisplayOverlay' });
+    makeDraggable(keyContainer, {
+        storageKey: 'keyDisplayOverlay'
+    });
 
     /* -------------------------
        Component: Crosshair Editor
@@ -410,55 +511,55 @@
 
     // Crosshair generators (kept same as original)
     const crosshairTypes = {
-        "None": (s,c)=>``,
-        "Dot": (s,c)=>`<div style="width:${s}px;height:${s}px;background:${c};border-radius:50%;"></div>`,
-        "Cross": (s,c,t)=>`
+        "None": (s, c) => ``,
+        "Dot": (s, c) => `<div style="width:${s}px;height:${s}px;background:${c};border-radius:50%;"></div>`,
+        "Cross": (s, c, t) => `
             <div style="position:relative;width:${s}px;height:${s}px;">
                 <div style="position:absolute;top:50%;left:0;width:100%;height:${t}px;background:${c};transform:translateY(-50%)"></div>
                 <div style="position:absolute;left:50%;top:0;height:100%;width:${t}px;background:${c};transform:translateX(-50%)"></div>
             </div>`,
-        "T-Shaped": (s,c,t)=>`
+        "T-Shaped": (s, c, t) => `
             <div style="position:relative;width:${s}px;height:${s}px;">
                 <div style="position:absolute;top:50%;left:0;width:100%;height:${t}px;background:${c};transform:translateY(-50%)"></div>
                 <div style="position:absolute;left:50%;top:50%;width:${t}px;height:50%;background:${c};transform:translate(-50%, -50%)"></div>
             </div>`,
-        "Circle": (s,c,t)=>`<div style="width:${s}px;height:${s}px;border:${t}px solid ${c};border-radius:50%;"></div>`,
-        "Chevron": (s,c)=>`<div style="width:0;height:0;border-left:${s/2}px solid transparent;border-right:${s/2}px solid transparent;border-bottom:${s}px solid ${c};"></div>`,
-        "Box": (s,c,t)=>`<div style="width:${s}px;height:${s}px;border:${t}px solid ${c};"></div>`,
-        "X-Shaped": (s,c,t)=>`
+        "Circle": (s, c, t) => `<div style="width:${s}px;height:${s}px;border:${t}px solid ${c};border-radius:50%;"></div>`,
+        "Chevron": (s, c) => `<div style="width:0;height:0;border-left:${s/2}px solid transparent;border-right:${s/2}px solid transparent;border-bottom:${s}px solid ${c};"></div>`,
+        "Box": (s, c, t) => `<div style="width:${s}px;height:${s}px;border:${t}px solid ${c};"></div>`,
+        "X-Shaped": (s, c, t) => `
             <div style="position:relative;width:${s}px;height:${s}px;">
                 <div style="position:absolute;width:${t}px;height:100%;background:${c};transform:rotate(45deg);left:50%;top:0;transform-origin:center;"></div>
                 <div style="position:absolute;width:${t}px;height:100%;background:${c};transform:rotate(-45deg);left:50%;top:0;transform-origin:center;"></div>
             </div>`,
-        "Four Corners": (s,c,t)=>`
+        "Four Corners": (s, c, t) => `
             <div style="position:relative;width:${s}px;height:${s}px;">
                 ${["top:0;left:0","top:0;right:0","bottom:0;left:0","bottom:0;right:0"].map(pos=>`
                     <div style="position:absolute;${pos};width:${s/4}px;height:${t}px;background:${c};"></div>
                     <div style="position:absolute;${pos};width:${t}px;height:${s/4}px;background:${c};"></div>`).join('')}
             </div>`,
-        "Split Cross": (s,c,t)=>`
+        "Split Cross": (s, c, t) => `
             <div style="position:relative;width:${s}px;height:${s}px;">
                 <div style="position:absolute;top:0;left:50%;width:${t}px;height:${s/2-5}px;background:${c};transform:translateX(-50%)"></div>
                 <div style="position:absolute;bottom:0;left:50%;width:${t}px;height:${s/2-5}px;background:${c};transform:translateX(-50%)"></div>
                 <div style="position:absolute;left:0;top:50%;width:${s/2-5}px;height:${t}px;background:${c};transform:translateY(-50%)"></div>
                 <div style="position:absolute;right:0;top:50%;width:${s/2-5}px;height:${t}px;background:${c};transform:translateY(-50%)"></div>
             </div>`,
-        "Star": (s,c,t)=>`
+        "Star": (s, c, t) => `
             <div style="position:relative;width:${s}px;height:${s}px;">
                 <div style="position:absolute;left:50%;top:0;width:${t}px;height:100%;background:${c};transform:translateX(-50%)"></div>
                 <div style="position:absolute;top:50%;left:0;width:100%;height:${t}px;background:${c};transform:translateY(-50%)"></div>
                 <div style="position:absolute;width:${t}px;height:100%;background:${c};transform:rotate(45deg);left:50%;top:0;transform-origin:center;"></div>
                 <div style="position:absolute;width:${t}px;height:100%;background:${c};transform:rotate(-45deg);left:50%;top:0;transform-origin:center;"></div>
             </div>`,
-        "Diamond": (s,c)=>`<div style="width:${s}px;height:${s}px;background:${c};transform:rotate(45deg);"></div>`,
-        "Triangle": (s,c)=>`<div style="width:0;height:0;border-left:${s/2}px solid transparent;border-right:${s/2}px solid transparent;border-bottom:${s}px solid ${c};"></div>`,
-        "Horizontal Line": (s,c,t)=>`<div style="width:${s}px;height:${t}px;background:${c};"></div>`,
-        "Vertical Line": (s,c,t)=>`<div style="width:${t}px;height:${s}px;background:${c};"></div>`,
-        "Circle with Dot": (s,c,t)=>`
+        "Diamond": (s, c) => `<div style="width:${s}px;height:${s}px;background:${c};transform:rotate(45deg);"></div>`,
+        "Triangle": (s, c) => `<div style="width:0;height:0;border-left:${s/2}px solid transparent;border-right:${s/2}px solid transparent;border-bottom:${s}px solid ${c};"></div>`,
+        "Horizontal Line": (s, c, t) => `<div style="width:${s}px;height:${t}px;background:${c};"></div>`,
+        "Vertical Line": (s, c, t) => `<div style="width:${t}px;height:${s}px;background:${c};"></div>`,
+        "Circle with Dot": (s, c, t) => `
             <div style="position:relative;width:${s}px;height:${s}px;border:${t}px solid ${c};border-radius:50%;">
                 <div style="position:absolute;top:50%;left:50%;width:${s/5}px;height:${s/5}px;background:${c};border-radius:50%;transform:translate(-50%,-50%);"></div>
             </div>`,
-        "Ringed Cross": (s,c,t)=>`
+        "Ringed Cross": (s, c, t) => `
             <div style="position:relative;width:${s}px;height:${s}px;">
                 <div style="position:absolute;inset:0;border:${t}px solid ${c};border-radius:50%;box-sizing:border-box;"></div>
                 <div style="position:absolute;top:50%;left:${t * 1.5}px;width:calc(100% - ${t * 3}px);height:${t}px;background:${c};transform:translateY(-50%);"></div>
@@ -467,7 +568,9 @@
     };
 
     function createCrosshair(type, size, color, thickness, opacity) {
-        const container = el('div', { id: 'customCrosshair' });
+        const container = el('div', {
+            id: 'customCrosshair'
+        });
         container.style.opacity = opacity;
         const generator = crosshairTypes[type] || (() => '');
         container.innerHTML = generator(size, color, thickness);
@@ -484,12 +587,15 @@
         };
         storage.set(STORAGE_KEY, data);
     }
+
     function loadCrosshairSettings() {
         return storage.get(STORAGE_KEY, null);
     }
 
     function createSettingsPanel() {
-        const panel = el('div', { id: 'crosshairSettings' });
+        const panel = el('div', {
+            id: 'crosshairSettings'
+        });
         panel.innerHTML = `
             <label>Type:</label>
             <select id="chType">
@@ -513,11 +619,11 @@
     }
 
     function updateCrosshair() {
-        const type      = document.getElementById('chType').value;
-        const size      = parseInt(document.getElementById('chSize').value, 10);
-        const color     = document.getElementById('chColor').value;
+        const type = document.getElementById('chType').value;
+        const size = parseInt(document.getElementById('chSize').value, 10);
+        const color = document.getElementById('chColor').value;
         const thickness = parseInt(document.getElementById('chThickness').value, 10);
-        const opacity   = parseFloat(document.getElementById('chOpacity').value);
+        const opacity = parseFloat(document.getElementById('chOpacity').value);
         const old = document.getElementById('customCrosshair');
         if (old) old.remove();
         document.body.appendChild(createCrosshair(type, size, color, thickness, opacity));
@@ -544,20 +650,33 @@
     /* -------------------------
        Component: GUI (Overlay toggles + controls)
        ------------------------- */
-    const overlayDefs = [
-        { id: 'dsOverlayStats', name: 'Overlay Stats', settingsId: null },
-        { id: 'keyDisplayOverlay', name: 'Key Display', settingsId: null },
-        { id: 'crosshairSettings', name: 'Crosshair Editor', settingsId: 'crosshairSettings' }
+    const overlayDefs = [{
+            id: 'dsOverlayStats',
+            name: 'Overlay Stats',
+            settingsId: null
+        },
+        {
+            id: 'keyDisplayOverlay',
+            name: 'Key Display',
+            settingsId: null
+        },
+        {
+            id: 'crosshairSettings',
+            name: 'Crosshair Editor',
+            settingsId: 'crosshairSettings'
+        }
     ];
 
-    const gui = el('div', { id: 'dsGuiContainer' });
+    const gui = el('div', {
+        id: 'dsGuiContainer'
+    });
     Object.assign(gui.style, {
         position: 'fixed',
         top: '10px',
         right: '10px',
         padding: '10px',
         background: 'rgba(30,30,30,0.8)',
-        color: '#fff',
+        color: theme.text1,
         borderRadius: '8px',
         zIndex: '100000',
         display: 'flex',
@@ -568,7 +687,9 @@
     });
     document.body.appendChild(gui);
 
-    const title = el('div', { text: 'Omniverse | Toggle: P' });
+    const title = el('div', {
+        text: 'Omniverse | Toggle: P'
+    });
     title.style.fontWeight = 'bold';
     title.style.textAlign = 'center';
     gui.appendChild(title);
@@ -582,92 +703,121 @@
     });
 
     for (const def of overlayDefs) {
-        const btn = el('button', { text: `${def.name}: ${state[def.id] ? 'ON' : 'OFF'}` });
-        Object.assign(btn.style, { padding: '6px 12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' });
+        const btn = el('button', {
+            text: `${def.name}: ${state[def.id] ? 'ON' : 'OFF'}`
+        });
+        Object.assign(btn.style, {
+            padding: '6px 12px',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            color: theme.text1
+        });
         gui.appendChild(btn);
         overlayButtons[def.id] = btn;
     }
 
     // Fetch rank button
-    const fetchRankBtn = el('button', { text: 'Fetch My Rank' });
-    Object.assign(fetchRankBtn.style, { padding: '6px 12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', background: '#2196f3', color: '#fff' });
+    const fetchRankBtn = el('button', {
+        text: 'Fetch My Rank'
+    });
+    Object.assign(fetchRankBtn.style, {
+        padding: '6px 12px',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontWeight: 'bold',
+        background: theme.blue1,
+        color: theme.text1
+    });
     gui.appendChild(fetchRankBtn);
     fetchRankBtn.addEventListener('click', async () => {
-    const overlay = document.createElement('div');
-    overlay.style.position = 'fixed';
-    overlay.style.top = 0;
-    overlay.style.left = 0;
-    overlay.style.width = '100vw';
-    overlay.style.height = '100vh';
-    overlay.style.background = 'rgba(0,0,0,0.6)';
-    overlay.style.display = 'flex';
-    overlay.style.justifyContent = 'center';
-    overlay.style.alignItems = 'center';
-    overlay.style.zIndex = 9999;
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = 0;
+        overlay.style.left = 0;
+        overlay.style.width = '100vw';
+        overlay.style.height = '100vh';
+        overlay.style.background = 'rgba(0,0,0,0.6)';
+        overlay.style.display = 'flex';
+        overlay.style.justifyContent = 'center';
+        overlay.style.alignItems = 'center';
+        overlay.style.zIndex = 9999;
 
-    const box = document.createElement('div');
-    box.style.background = '#1e1e1e';
-    box.style.padding = '30px';
-    box.style.borderRadius = '10px';
-    box.style.boxShadow = '0 0 20px rgba(0,0,0,0.5)';
-    box.style.textAlign = 'center';
-    box.style.color = 'white';
-    box.style.fontFamily = 'Arial, sans-serif';
+        const box = document.createElement('div');
+        box.style.background = '#1e1e1e';
+        box.style.padding = '30px';
+        box.style.borderRadius = '10px';
+        box.style.boxShadow = '0 0 20px rgba(0,0,0,0.5)';
+        box.style.textAlign = 'center';
+        box.style.color = theme.text1;
+        box.style.fontFamily = 'Arial, sans-serif';
 
-    const label = document.createElement('div');
-    label.textContent = 'Enter your username:';
-    label.style.marginBottom = '10px';
+        const label = document.createElement('div');
+        label.textContent = 'Enter your username:';
+        label.style.marginBottom = '10px';
 
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.style.padding = '10px';
-    input.style.borderRadius = '5px';
-    input.style.border = 'none';
-    input.style.width = '200px';
-    input.style.marginBottom = '10px';
-    input.style.fontSize = '16px';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.style.padding = '10px';
+        input.style.borderRadius = '5px';
+        input.style.border = 'none';
+        input.style.width = '200px';
+        input.style.marginBottom = '10px';
+        input.style.fontSize = '16px';
 
-    const submit = document.createElement('button');
-    submit.textContent = 'Submit';
-    submit.style.padding = '10px 20px';
-    submit.style.border = 'none';
-    submit.style.borderRadius = '5px';
-    submit.style.background = '#4CAF50';
-    submit.style.color = 'white';
-    submit.style.cursor = 'pointer';
-    submit.style.fontSize = '16px';
+        const submit = document.createElement('button');
+        submit.textContent = 'Submit';
+        submit.style.padding = '10px 20px';
+        submit.style.border = 'none';
+        submit.style.borderRadius = '5px';
+        submit.style.background = '#4CAF50';
+        submit.style.color = theme.text1;
+        submit.style.cursor = 'pointer';
+        submit.style.fontSize = '16px';
 
-    submit.addEventListener('click', async () => {
-        const username = input.value.trim();
-        console.log(username);
-        if (!username) return;
+        submit.addEventListener('click', async () => {
+            const username = input.value.trim();
+            console.log(username);
+            if (!username) return;
 
-        try {
-            const rank = await fetchLeaderboardRank(username);
-            alert(`${rank}`);
-            document.body.removeChild(overlay);
-        } catch (err) {
-            console.error('Failed to fetch leaderboard rank:', err);
-            alert('Failed to fetch rank');
-            document.body.removeChild(overlay);
-        }
-    });
+            try {
+                const rank = await fetchLeaderboardRank(username);
+                alert(`${rank}`);
+                document.body.removeChild(overlay);
+            } catch (err) {
+                console.error('Failed to fetch leaderboard rank:', err);
+                alert('Failed to fetch rank');
+                document.body.removeChild(overlay);
+            }
+        });
 
 
-    box.appendChild(label);
-    box.appendChild(input);
-    box.appendChild(submit);
-    overlay.appendChild(box);
-    document.body.appendChild(overlay);
-    input.focus();
+        box.appendChild(label);
+        box.appendChild(input);
+        box.appendChild(submit);
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+        input.focus();
     });
 
     // Reset button
-    const resetBtn = el('button', { text: 'Reset Omniverse' });
-    Object.assign(resetBtn.style, { padding: '6px 12px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', background: '#f44336', color: '#fff' });
+    const resetBtn = el('button', {
+        text: 'Reset Omniverse'
+    });
+    Object.assign(resetBtn.style, {
+        padding: '6px 12px',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontWeight: 'bold',
+        background: theme.red3,
+        color: theme.text1
+    });
     gui.appendChild(resetBtn);
     resetBtn.addEventListener('click', () => {
-        const idsToReset = ['dsOverlayStats', 'keyDisplayOverlay', 'dsGuiContainer'];
+        const idsToReset = ['dsOverlayStats', 'keyDisplayOverlay', 'dsGuiContainer', 'minimalstats', 'theme'];
         idsToReset.forEach(id => {
             storage.remove(id + '_pos');
             storage.remove(id);
@@ -676,15 +826,17 @@
     });
 
     // Create the update button
-    const updateBtn = el('button', { text: 'Checking updates...' });
+    const updateBtn = el('button', {
+        text: 'Checking updates...'
+    });
     Object.assign(updateBtn.style, {
         padding: '6px 12px',
         border: 'none',
         borderRadius: '6px',
         cursor: 'pointer',
         fontWeight: 'bold',
-        background: '#ff9800',
-        color: '#fff'
+        background: theme.yellow1,
+        color: theme.text1
     });
     // Append it to the existing GUI container
     gui.appendChild(updateBtn);
@@ -696,7 +848,7 @@
             const res = await fetch('https://raw.githubusercontent.com/Typhoonz0/omniverse/main/version.txt');
             const remoteVersion = (await res.text()).trim();
 
-            let localVersion = '0.3'; // fuckass node wont work unless i have localversion here and in version.txt
+            let localVersion = '0.4'; // fuckass node wont work unless i have localversion here and in version.txt
 
             if (remoteVersion !== localVersion) {
                 updateBtn.textContent = "Update Available!";
@@ -706,20 +858,252 @@
                 });
             } else {
                 updateBtn.textContent = "Up to Date";
-                updateBtn.style.background = "#2196f3";
+                updateBtn.style.background = theme.blue1;
                 updateBtn.disabled = true;
             }
         } catch (err) {
             console.error("Update check failed:", err);
             updateBtn.textContent = "Update Check Failed";
-            updateBtn.style.background = "#f44336";
+            updateBtn.style.background = theme.red3;
         }
     }
 
     // Run update check after GUI has loaded
     checkForUpdates();
 
+    const settingsBtn = el('button', {
+        text: 'Settings'
+    });
+    Object.assign(settingsBtn.style, {
+        padding: '6px 12px',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontWeight: 'bold',
+        background: theme.purple1,
+        color: theme.text1
+    });
+    gui.appendChild(settingsBtn);
 
+    const settingsOverlay = el('div', {
+        id: 'omniverseSettingsOverlay'
+    });
+    Object.assign(settingsOverlay.style, {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        display: 'none',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 9999
+    });
+    document.body.appendChild(settingsOverlay);
+
+    const box = el('div');
+    Object.assign(box.style, {
+        background: '#1e1e1e',
+        padding: '20px',
+        borderRadius: '10px',
+        width: '320px',
+        color: theme.text1,
+        boxShadow: '0 0 20px rgba(0,0,0,0.5)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        fontFamily: 'Arial, sans-serif'
+    });
+    settingsOverlay.appendChild(box);
+
+    const settingstitle = el('div', {
+        text: 'Omniverse Settings'
+    });
+    Object.assign(settingstitle.style, {
+        fontSize: '18px',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: '8px'
+    });
+    box.appendChild(settingstitle);
+
+    
+    function saveTheme() {
+        storage.setRaw('theme', JSON.stringify(theme));
+    }
+
+    function createColorEditor(box, theme) {
+        const inputs = {};
+
+        // Only add preset selector once
+        if (!box.querySelector('#themePresetSelect')) {
+            const presetRow = el('div');
+            Object.assign(presetRow.style, {
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '8px'
+            });
+
+            const presetLabel = el('label', { text: 'Theme Preset:' });
+            Object.assign(presetLabel.style, {
+                flex: '1',
+                fontSize: '0.9em'
+            });
+
+            const presetSelect = el('select');
+            presetSelect.id = 'themePresetSelect';
+            Object.keys(themes).forEach(name => {
+                const option = el('option', { text: name, value: name });
+                if (name === currentPreset) option.selected = true;
+                presetSelect.appendChild(option);
+            });
+            const customOption = el('option', { text: 'Custom', value: 'custom' });
+            if (currentPreset === 'custom') customOption.selected = true;
+            presetSelect.appendChild(customOption);
+
+            presetRow.appendChild(presetLabel);
+            presetRow.appendChild(presetSelect);
+            box.appendChild(presetRow);
+
+            presetSelect.addEventListener('change', () => {
+                const selected = presetSelect.value;
+                if (selected === 'custom') return;
+                currentPreset = selected;
+                const presetTheme = themes[selected];
+                for (const key in presetTheme) {
+                    if (inputs[key]) {
+                        inputs[key].value = presetTheme[key];
+                        theme[key] = presetTheme[key];
+                        document.documentElement.style.setProperty(`--${key}`, presetTheme[key]);
+                    }
+                }
+                saveTheme();
+            });
+        }
+
+        // Add color inputs
+        for (const key in theme) {
+            if (!/^#[0-9A-Fa-f]{3,6}$/.test(theme[key])) continue;
+            if (box.querySelector(`input[title="${key}"]`)) continue; // skip duplicates
+
+            const row = el('div');
+            Object.assign(row.style, {
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '4px'
+            });
+
+            const label = el('label', { text: key });
+            Object.assign(label.style, {
+                flex: '1',
+                marginRight: '6px',
+                fontSize: '0.85em'
+            });
+
+            const input = el('input');
+            Object.assign(input, { type: 'color', value: theme[key], title: key });
+            Object.assign(input.style, {
+                width: '24px',
+                height: '24px',
+                border: 'none',
+                padding: '0',
+                cursor: 'pointer'
+            });
+
+            inputs[key] = input;
+            row.appendChild(label);
+            row.appendChild(input);
+            box.appendChild(row);
+
+            input.addEventListener('input', () => {
+                theme[key] = input.value;
+                document.documentElement.style.setProperty(`--${key}`, input.value);
+                if (currentPreset !== 'custom') {
+                    currentPreset = 'custom';
+                    const presetSelect = box.querySelector('#themePresetSelect');
+                    if (presetSelect) presetSelect.value = 'custom';
+                }
+                saveTheme();
+            });
+        }
+
+        for (const key in inputs) {
+            document.documentElement.style.setProperty(`--${key}`, theme[key]);
+        }
+    }
+
+    // Usage
+    createColorEditor(box, theme);
+
+    // === MINIMAL STATS TOGGLE ===
+    let minimalStats = storage.getRaw('minimalstats') === 'true';
+
+    const minimalBtn = el('button', {
+        text: `Minimal Stats: ${minimalStats ? 'ON' : 'OFF'}`
+    });
+    Object.assign(minimalBtn.style, {
+        padding: '6px 12px',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontWeight: 'bold',
+        color: theme.text1,
+        background: minimalStats ? theme.green1 : theme.red3
+    });
+    box.appendChild(minimalBtn);
+
+    minimalBtn.addEventListener('click', () => {
+        minimalStats = !minimalStats;
+        storage.setRaw('minimalstats', minimalStats ? 'true' : 'false');
+        minimalBtn.textContent = `Minimal Stats: ${minimalStats ? 'ON' : 'OFF'}`;
+        minimalBtn.style.background = minimalStats ? theme.green1 : theme.red3;
+        toggleMinimalStats(minimalStats); // apply changes immediately
+    });
+
+
+    // === APPLY BUTTON ===
+    const applyThemeButton = el('button', {
+        text: 'Apply Theme (reloads page)'
+    });
+    Object.assign(applyThemeButton.style, {
+        padding: '8px',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        background: theme.purple1,
+        color: theme.text1,
+        fontWeight: 'bold'
+    });
+    applyThemeButton.addEventListener('click', () => {
+        window.location.reload();
+    });
+    box.appendChild(applyThemeButton);
+
+    // === CLOSE BUTTON ===
+    const closeBtn = el('button', {
+        text: 'Close'
+    });
+    Object.assign(closeBtn.style, {
+        padding: '8px',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        background: theme.red3,
+        color: theme.text1,
+        fontWeight: 'bold'
+    });
+    closeBtn.addEventListener('click', () => {
+        settingsOverlay.style.display = 'none';
+    });
+    box.appendChild(closeBtn);
+
+    // === SETTINGS TOGGLE BUTTON ===
+    settingsBtn.addEventListener('click', () => {
+        settingsOverlay.style.display =
+            settingsOverlay.style.display === 'none' ? 'flex' : 'none';
+    });
+
+makeDraggable(settingsOverlay);
 
     // Helper to update visibility and button text/style
     function updateVisibility(id, settingsId) {
@@ -733,7 +1117,7 @@
         const def = overlayDefs.find(o => o.id === id);
         if (btn && def) {
             btn.textContent = `${def.name}: ${state[id] ? 'ON' : 'OFF'}`;
-            btn.style.background = state[id] ? '#4caf50' : '#f44336';
+            btn.style.background = state[id] ? theme.green1 : theme.red3;
             storage.setRaw(id, state[id] ? 'true' : 'false');
         }
     }
@@ -757,21 +1141,22 @@
     });
 
     // Make GUI draggable and persist
-    makeDraggable(gui, { storageKey: 'dsGuiContainer' });
+    makeDraggable(gui, {
+        storageKey: 'dsGuiContainer'
+    });
 
     ['dsOverlayStats', 'keyDisplayOverlay', 'dsGuiContainer'].forEach(id => {
         const elNode = document.getElementById(id);
         if (!elNode) return;
-        const pos = loadPosition(id);
+        const pos = storage.loadPosition(id);
         if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
             elNode.style.left = pos.x + 'px';
-            elNode.style.top  = pos.y + 'px';
+            elNode.style.top = pos.y + 'px';
             elNode.style.right = 'auto';
         }
     });
 
     async function fetchLeaderboardRank(username) {
-        console.log('aa');
         try {
             const response = await fetch('https://login.deadshot.io/leaderboards');
             const data = await response.json();
@@ -798,8 +1183,10 @@
     }
 
 
-    
-    const footer = el('div', { text: 'xliam.space' });
+
+    const footer = el('div', {
+        text: 'xliam.space'
+    });
     footer.style.textAlign = 'center';
     gui.appendChild(footer);
 })();

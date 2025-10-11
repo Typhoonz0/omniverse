@@ -2,7 +2,7 @@
   "name": "deadshot-viewer",
   "version": "1.0.0",
   "description": "Electron app that displays deadshot.io",
-  "main": "main.js",
+  "main": "src/main.js",
   "scripts": {
     "start": "electron .",
     "dist-win": "electron-packager . omniverse --platform=win32 --arch=x64 --out=dist --overwrite",
