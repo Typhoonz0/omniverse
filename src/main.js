@@ -5,7 +5,7 @@ const fs = require('fs');
 const { ElectronBlocker} = require('@cliqz/adblocker-electron');
 const fetch = require('cross-fetch');
 
-const adblock = true; // if ur smart enough to look through the code the adblocker is here
+const adblock = false; // if ur smart enough to look through the code the adblocker is here
 let gameWindow;
 //app.commandLine.appendSwitch('disable-frame-rate-limit');
 //app.commandLine.appendSwitch('force_high_performance_gpu');

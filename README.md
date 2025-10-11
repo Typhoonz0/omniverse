@@ -14,7 +14,7 @@
 ## DO NOT DISTRIBUTE WITHOUT CREDIT
 ## Download:
 https://github.com/Typhoonz0/omniverse/releases/
-
+(the skin swapper is broken in the compiled release, run from source if you want to swap skins)
 ## Run from source:
 ```bash
 git clone https://github.com/Typhoonz0/omniverse.git
