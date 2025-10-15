@@ -16,7 +16,10 @@
 https://github.com/Typhoonz0/omniverse/releases/
 
 ## Run from source:
-### NOTE: If the folder name is omniverse-main rename it to just omniverse
+### NOTE IF YOU ARE DEVELOPING!
+- Rename omniverse-main to omniverse if required
+- If compiling on Windows, copy resources/app to resources/omniverse
+- This will be fixed in the next update
 ```bash
 git clone https://github.com/Typhoonz0/omniverse.git
 cd omniverse
