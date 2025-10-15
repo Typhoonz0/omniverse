@@ -16,6 +16,7 @@
 https://github.com/Typhoonz0/omniverse/releases/
 (the skin swapper is broken in the compiled release, run from source if you want to swap skins)
 ## Run from source:
+### NOTE: If the folder name is omniverse-main rename it to just omniverse
 ```bash
 git clone https://github.com/Typhoonz0/omniverse.git
 cd omniverse
