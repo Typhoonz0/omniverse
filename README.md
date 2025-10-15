@@ -7,7 +7,7 @@
 
 <p align="center">
   <img src="github/image.png">
-  <i>Preview of Omniverse 0.4</i>
+  <i>Preview of Omniverse 0.5</i>
 </p>
 
 
@@ -23,13 +23,15 @@ npm install
 npm start
 ```
 ## Features:
-
+- [x] FPS Booster (literally triples your FPS)
 - [x] Keys Overlay - WASD C, R, Left/Right click 
-- [x] PC Stats - FPS, Ping, Platform, Total Memory (buggy), CPU Cores
+- [x] PC Stats - Just FPS + Ping or with Platform + CPU Cores
 - [x] Gun skin swapper
 - [x] Customizable UI
 - [x] Leaderboard scraper
 - [x] Auto Fullscreen
+- [x] Adblocker
+- [x] Discord RPC
 - [ ] Aimbot soon trust 
 
 ## How to swap your guns:

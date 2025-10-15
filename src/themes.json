@@ -1,0 +1,42 @@
+{
+    "default": {
+        "red1": "#FF4C4C",
+        "red2": "#c52424",
+        "red3": "#f44336",
+        "yellow1": "#ff9800",
+        "green1": "#4caf50",
+        "blue1": "#2196f3",
+        "purple1": "#9c27b0",
+        "text1": "#ffffff"
+    },
+    "dark": {
+        "red1": "#ff4d4d",
+        "red2": "#b71c1c",
+        "red3": "#8b0000",
+        "yellow1": "#f57f17",
+        "green1": "#2e7d32",
+        "blue1": "#0d47a1",
+        "purple1": "#4a148c",
+        "text1": "#e0e0e0"
+    },
+    "catppuccin": {
+        "red1": "#181926",
+        "red2": "#6e738d",
+        "red3": "#363a4f",
+        "yellow1": "#494d64",
+        "green1": "#5b6078",
+        "blue1": "#8087a2",
+        "purple1": "#4c4f69",
+        "text1": "#b7bdf8"
+    },
+    "neon": {
+        "red1": "#ff0055",
+        "red2": "#c70039",
+        "red3": "#ff3366",
+        "yellow1": "#ffcc00",
+        "green1": "#00ff99",
+        "blue1": "#00ccff",
+        "purple1": "#cc33ff",
+        "text1": "#ffffff"
+    }
+}

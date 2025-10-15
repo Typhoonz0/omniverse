@@ -1,0 +1,7 @@
+{
+  "disableFrameRateLimit": false,
+  "forceHighPerformanceGPU": false,
+  "adblocker": false,
+  "rpc": true,
+  "toggleKey": "p"
+}
