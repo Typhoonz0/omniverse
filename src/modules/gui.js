@@ -334,7 +334,7 @@ if (omniversePath !== base) {
     Object.assign(box.style, {
         padding: '20px',
         borderRadius: '10px',
-   //     width: '100px',
+        width: '320px',
         background: 'rgba(0,0,0,0.4)',
         backdropFilter: 'blur(10px)',
         color: theme.text1,
@@ -500,114 +500,7 @@ if (omniversePath !== base) {
         marginBottom: '8px'
     });
     box.appendChild(warntitle);
-        // === JS Executor Button ===
-    const execBtn = utils.el('button', { text: 'Open JS Executor' });
-    Object.assign(execBtn.style, {
-        padding: '6px 12px',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontWeight: 'bold',
-        background: theme.red3,
-        color: theme.text1
-    });
-    box.appendChild(execBtn);
 
-    execBtn.addEventListener('click', () => {
-        const overlay = document.createElement('div');
-        Object.assign(overlay.style, {
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            background: 'rgba(0,0,0,0.6)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 99999
-        });
-
-        const box = document.createElement('div');
-        Object.assign(box.style, {
-            background: '#1e1e1e',
-            padding: '20px',
-            borderRadius: '10px',
-            boxShadow: '0 0 20px rgba(0,0,0,0.5)',
-            width: '400px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-            color: theme.text1,
-            fontFamily: 'Arial, sans-serif'
-        });
-
-        const label = document.createElement('div');
-        label.textContent = 'Enter JavaScript code:';
-        label.style.fontWeight = 'bold';
-
-        const input = document.createElement('textarea');
-        Object.assign(input.style, {
-            width: '100%',
-            height: '120px',
-            padding: '8px',
-            borderRadius: '5px',
-            border: 'none',
-            background: '#111',
-            color: theme.text1,
-            fontFamily: 'monospace',
-            fontSize: '14px'
-        });
-
-        const runBtn = document.createElement('button');
-        runBtn.textContent = 'Run';
-        Object.assign(runBtn.style, {
-            padding: '8px 12px',
-            border: 'none',
-            borderRadius: '5px',
-            background: theme.red1,
-            color: theme.text1,
-            cursor: 'pointer',
-            fontWeight: 'bold'
-        });
-
-        const output = document.createElement('div');
-        Object.assign(output.style, {
-            background: '#000',
-            color: '#0f0',
-            padding: '6px',
-            borderRadius: '5px',
-            fontFamily: 'monospace',
-            fontSize: '12px',
-            minHeight: '60px',
-            overflowY: 'auto',
-            whiteSpace: 'pre-wrap'
-        });
-
-        runBtn.addEventListener('click', () => {
-            const code = input.value.trim();
-            if (!code) return;
-            try {
-                const result = eval(code);
-                output.textContent = String(result);
-            } catch (err) {
-                output.textContent = 'Error: ' + err.message;
-            }
-        });
-
-        // Optional: close overlay by clicking outside box
-        overlay.addEventListener('click', e => {
-            if (e.target === overlay) document.body.removeChild(overlay);
-        });
-
-        box.appendChild(label);
-        box.appendChild(input);
-        box.appendChild(runBtn);
-        box.appendChild(output);
-        overlay.appendChild(box);
-        document.body.appendChild(overlay);
-        input.focus();
-    });
     // === TOGGLE GUI KEY BUTTON ===
     let toggleKey = settings.toggleKey ?? 'p'; // default key
 

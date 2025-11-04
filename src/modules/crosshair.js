@@ -30,22 +30,21 @@ function CrosshairOverlay(utils, theme) {
         transition: all 0.3s ease;
     }
     #toggleButton:hover { transform: scale(1.05); box-shadow: 0 0 12px rgba(255,75,43,0.9); }
-    #crosshairSettings {
-        position: 'fixed',
-        top: '10px',
-        right: '10px',
-        padding: '10px',
-        background: 'rgba(0,0,0,0.4)',
-        backdropFilter: 'blur(10px)',
-        color: theme.text1,
-        borderRadius: '8px',
-        zIndex: '100000',
-        border: '3px solid #${theme.red1}',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
-        minWidth: '180px',
-        cursor: 'move'
+   #crosshairSettings {
+        position: fixed;
+        top: 60px;
+        right: 20px;
+        width: 240px;
+        background: rgba(20,20,20,0.6);
+        backdrop-filter: blur(10px);
+        color: #fff;
+        font-family: 'Segoe UI', sans-serif;
+        border-radius: 12px;
+        box-shadow: 0 0 12px rgba(0,0,0,0.4);
+        padding: 12px;
+        display: none;
+        transition: all 0.3s ease;
+        z-index: 9999;
     }
     #crosshairSettings label { display: block; margin-top: 8px; font-size: 13px; }
     #crosshairSettings input, #crosshairSettings select { width: 100%; margin: 4px 0 10px; padding: 6px; font-size: 13px; color: #fff; background: rgba(255,255,255,0.1); border: none; border-radius: 6px; }
