@@ -35,7 +35,7 @@ npm start
 
 ## How to swap your guns:
 Replace the example images inside the `swap/` directory, and reload  the client. Make sure the names are EXACTLY the same as below.
-On Windows, this is in `<omniverse folder location>/resources/omniverse/swap`
+On Windows, this is probably in `<omniverse folder location>/resources/app/swap`
 ```
 swap/
 └── weapons
@@ -48,3 +48,4 @@ swap/
     └── vector
         └── vectorcomp.webp
 ```
+
