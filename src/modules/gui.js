@@ -3,13 +3,40 @@ function GUI(utils, theme, themes, currentPreset) {
     const fs = require('fs');
     const path = require('path');
 
-    // Start from the current working directory, not __dirname
-    let dir = process.cwd();
-
-    while (!fs.existsSync(path.join(dir, 'omniverse')) && path.dirname(dir) !== dir)
+function findFolder(startDir, folderName) {
+    let dir = startDir;
+    while (!fs.existsSync(path.join(dir, folderName)) && path.dirname(dir) !== dir) {
         dir = path.dirname(dir);
+    }
+    if (fs.existsSync(path.join(dir, folderName))) return path.join(dir, folderName);
+    return null;
+}
 
-    const settingsPath = path.join(dir, 'omniverse', 'src', "settings.json");
+let dir  = __dirname;
+console.log(__dirname);
+let omniversePath = findFolder(dir, 'omniverse');
+let base;
+if (!omniversePath) {
+    // If omniverse not found, repeat search for 'app'
+    omniversePath = findFolder(dir, 'app');
+}
+if (!omniversePath) {
+    omniversePath = findFolder(dir, 'src');
+    base = omniversePath;
+}
+
+
+if (!omniversePath) {
+    console.error('Neither "omniverse" nor "app" was found!');
+} else {
+    console.log('Using folder:', omniversePath);
+}
+
+console.log('Using folder:', omniversePath);
+if (omniversePath !== base) {
+    base = path.join(omniversePath, 'src');
+}
+    const settingsPath = path.join(omniversePath, 'src', "settings.json");
 
     // Helper to read/write JSON safely
     function readSettings() {
@@ -237,7 +264,11 @@ function GUI(utils, theme, themes, currentPreset) {
             while (!fs.existsSync(path.join(dir, 'omniverse')) && path.dirname(dir) !== dir)
                 dir = path.dirname(dir);
         
-            const versionPath = path.join(path.join(dir, 'omniverse'), 'version.txt');
+            let versionPath = path.join(omniversePath, "version.txt");
+            console.log(base, versionPath);
+            if (base === omniversePath) {
+                versionPath = path.join(omniversePath, "..","version.txt");
+            }
             console.log(versionPath);
             let localVersion = 'unknown';
 
