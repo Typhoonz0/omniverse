@@ -8,16 +8,17 @@
 // CREDITS:
 // By xLiam1 | xliam.space
 
-const fs = require('fs')
+const fs = require('fs');
 const path = require('path');
 
-let dir = __dirname;
+let dir = process.cwd();
+
 while (!fs.existsSync(path.join(dir, 'omniverse')) && path.dirname(dir) !== dir)
     dir = path.dirname(dir);
 
 const omniversePath = path.join(dir, 'omniverse');
-const base = path.join(omniversePath, 'src');
 
+const base = path.join(omniversePath, 'src');
 const utils = require(path.join(base, 'modules', 'utils.js'));
 const themes = require(path.join(base, 'themes.json'));
 const { StatsOverlay } = require(path.join(base, 'modules', 'stats.js'));
@@ -57,5 +58,35 @@ utils.injectStyle(`
 
 StatsOverlay(utils, theme);
 KeysOverlay(utils, theme);
-CrosshairOverlay(utils);
+CrosshairOverlay(utils, theme);
 GUI(utils, theme, themes, currentPreset);
+
+
+let version = 'Unknown';
+try {
+    const versionPath = path.resolve(omniversePath, 'version.txt');
+    version = fs.readFileSync(versionPath, 'utf8').trim();
+} catch (err) {
+    console.error('Failed to read version.txt:', err);
+}
+
+const date = new Date().toLocaleDateString();
+const osInfo = (utils && utils.OSInfo()) ? utils.OSInfo() : 'Unknown OS';
+
+const watermark = document.createElement('div');
+watermark.textContent = `Omniverse v${version} | ${date} | ${osInfo}`;
+
+Object.assign(watermark.style, {
+    position: 'fixed',
+    bottom: '8px',
+    left: '8px',
+    opacity: '0.3',
+    color: '#fff',
+    fontSize: '20px',
+    zIndex: '999999',
+    pointerEvents: 'none',
+    userSelect: 'none',
+    textShadow: '1px 1px 2px rgba(0,0,0,0.6)',
+});
+
+document.body.appendChild(watermark);

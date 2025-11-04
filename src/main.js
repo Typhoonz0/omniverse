@@ -83,7 +83,7 @@ const createWindow = () => {
 	gameWindow = new BrowserWindow({
 		show: true,
 		title: "Deadshot.io",
-		fullscreen: true,
+		fullscreen: false,
 
 		webPreferences: {
 			nodeIntegration: true,

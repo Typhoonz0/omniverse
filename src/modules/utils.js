@@ -158,7 +158,12 @@ const utils = {
             currentPreset = 'default';
         } 
         return theme, themes, currentPreset;
+    },
+    
+    OSInfo() {
+        return navigator.platform ? `${navigator.platform}` : 'N/A';
     }
+
 }
 
 module.exports = utils;

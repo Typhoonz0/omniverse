@@ -14,7 +14,6 @@
 ## DO NOT DISTRIBUTE WITHOUT CREDIT
 ## Download:
 https://github.com/Typhoonz0/omniverse/releases/
-(the skin swapper is broken in the compiled release, run from source if you want to swap skins)
 ## Run from source:
 ```bash
 git clone https://github.com/Typhoonz0/omniverse.git
@@ -36,6 +35,7 @@ npm start
 
 ## How to swap your guns:
 Replace the example images inside the `swap/` directory, and reload  the client. Make sure the names are EXACTLY the same as below.
+On Windows, this is in `<omniverse folder location>/resources/omniverse/swap`
 ```
 swap/
 └── weapons
