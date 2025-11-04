@@ -11,12 +11,31 @@
 const fs = require('fs');
 const path = require('path');
 
-let dir = process.cwd();
 
-while (!fs.existsSync(path.join(dir, 'omniverse')) && path.dirname(dir) !== dir)
-    dir = path.dirname(dir);
+function findFolder(startDir, folderName) {
+    let dir = startDir;
+    while (!fs.existsSync(path.join(dir, folderName)) && path.dirname(dir) !== dir) {
+        dir = path.dirname(dir);
+    }
+    if (fs.existsSync(path.join(dir, folderName))) return path.join(dir, folderName);
+    return null;
+}
 
-const omniversePath = path.join(dir, 'omniverse');
+let dir = __dirname;
+let omniversePath = findFolder(dir, 'omniverse');
+
+if (!omniversePath) {
+    // If omniverse not found, repeat search for 'app'
+    omniversePath = findFolder(dir, 'app');
+}
+
+if (!omniversePath) {
+    console.error('Neither "omniverse" nor "app" was found!');
+} else {
+    console.log('Using folder:', omniversePath);
+}
+
+console.log('Using folder:', omniversePath);
 
 const base = path.join(omniversePath, 'src');
 const utils = require(path.join(base, 'modules', 'utils.js'));

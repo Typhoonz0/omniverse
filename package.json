@@ -5,7 +5,7 @@
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
-    "dist-win": "electron-packager . omniverse --platform=win32 --arch=x64 --out=dist --overwrite",
+    "dist-win": "electron-packager . omniverse --platform=win32 --arch=x64 --out=../omniverse-dist --overwrite",
     "dist-linux": "electron-packager . omniverse --platform=linux --arch=x64 --out=dist --overwrite"
   },
 

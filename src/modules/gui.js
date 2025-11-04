@@ -3,13 +3,31 @@ function GUI(utils, theme, themes, currentPreset) {
     const fs = require('fs');
     const path = require('path');
 
-    // Start from the current working directory, not __dirname
-    let dir = process.cwd();
-
-    while (!fs.existsSync(path.join(dir, 'omniverse')) && path.dirname(dir) !== dir)
-        dir = path.dirname(dir);
-
-    const settingsPath = path.join(dir, 'omniverse', 'src', "settings.json");
+    
+    function findFolder(startDir, folderName) {
+        let dir = startDir;
+        while (!fs.existsSync(path.join(dir, folderName)) && path.dirname(dir) !== dir) {
+            dir = path.dirname(dir);
+        }
+        if (fs.existsSync(path.join(dir, folderName))) return path.join(dir, folderName);
+        return null;
+    }
+    
+    let dir = __dirname;
+    let omniversePath = findFolder(dir, 'omniverse');
+    
+    if (!omniversePath) {
+        // If omniverse not found, repeat search for 'app'
+        omniversePath = findFolder(dir, 'app');
+    }
+    
+    if (!omniversePath) {
+        console.error('Neither "omniverse" nor "app" was found!');
+    } else {
+        console.log('Using folder:', omniversePath);
+    }
+    
+    const settingsPath = path.join(omniversePath, 'src', "settings.json");
 
     // Helper to read/write JSON safely
     function readSettings() {
@@ -237,7 +255,7 @@ function GUI(utils, theme, themes, currentPreset) {
             while (!fs.existsSync(path.join(dir, 'omniverse')) && path.dirname(dir) !== dir)
                 dir = path.dirname(dir);
         
-            const versionPath = path.join(path.join(dir, 'omniverse'), 'version.txt');
+            const versionPath = path.join(omniversePath, "version.txt");
             console.log(versionPath);
             let localVersion = 'unknown';
 
