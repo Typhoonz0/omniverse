@@ -56,24 +56,47 @@ function StatsOverlay(utils, theme) {
         return navigator.platform ? `${navigator.platform}` : 'N/A';
     }
 
+    function getSens() {
+        return utils.get('settings', {})?.sensitivity ?? 'N/A';
+    }
+
+    const regionMap = {
+        "Europe": "EU",
+        "North America": "NA",
+        "Asia": "AS",
+        "South America": "SA",
+        "Australia": "AU",
+        "South India": "IN"
+    };
+
+    function getServer() {
+        const region = utils.get('settings', {})?.region ?? '-';
+        return regionMap[region] ?? "-";
+    }
+
+    function updateStatsVisibility() {
+        const showOS = utils.getRaw("showOS") !== "false";
+        const showCPU = utils.getRaw("showCPU") !== "false";
+        const showFPS = utils.getRaw("showFPS") !== "false";
+        const showPing = utils.getRaw("showPing") !== "false";
+        const showSens = utils.getRaw("showSens") !== "false";
+        const showServer = utils.getRaw("showServer") !== "false";
+        
+        let html = '';
+        
+        if (showOS) html += `OS: ${getOS()}<br>`;
+        if (showCPU) html += `CPU: ${getCPU()}<br>`;
+        if (showFPS) html += `FPS: ${fps}<br>`;
+        if (showPing) html += `Ping: ${ping === -1 ? 'offline' : ping + ' ms'}<br>`;
+        if (showSens) html += `Sens: ${getSens()}<br>`;
+        if (showServer) html += `Server: ${getServer()}<br>`;
+
+        overlayStats.innerHTML = html.trim();
+    }
+
     setInterval(() => {
-        const minimalMode = utils.getRaw("minimalstats") === "true";
-
-        if (minimalMode) {
-            overlayStats.innerHTML = `
-                FPS: ${fps}<br>
-                Ping: ${ping === -1 ? 'offline' : ping + ' ms'}
-            `;
-        } else {
-            overlayStats.innerHTML = `
-                OS: ${getOS()}<br>
-                CPU: ${getCPU()}<br>
-                FPS: ${fps}<br>
-                Ping: ${ping === -1 ? 'offline' : ping + ' ms'}
-            `;
-        }
-
         updatePing();
+        updateStatsVisibility();
     }, 1000);
 
     utils.makeDraggable(overlayStats, { storageKey: 'dsOverlayStats' });
