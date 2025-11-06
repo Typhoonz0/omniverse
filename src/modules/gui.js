@@ -489,12 +489,14 @@ if (omniversePath !== base) {
     statsContainer.appendChild(checkboxContainer);
 
     const statOptions = [
+        { id: 'showDate', label: 'Date' },
+        { id: 'showTime', label: 'Time' },
         { id: 'showOS', label: 'OS' },
         { id: 'showCPU', label: 'CPU' },
-        { id: 'showFPS', label: 'FPS' },
-        { id: 'showPing', label: 'Ping' },
+        { id: 'showServer', label: 'Server' },
         { id: 'showSens', label: 'Sens' },
-        { id: 'showServer', label: 'Server' }
+        { id: 'showFPS', label: 'FPS' },
+        { id: 'showPing', label: 'Ping' }
     ];
 
     statOptions.forEach(stat => {
