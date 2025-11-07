@@ -135,46 +135,139 @@ class CrosshairOverlay {
         return this.utils.get(this.STORAGE_KEY, null);
     }
 
-    // --- SETTINGS PANEL ---
-createSettingsPanel() {
-    const panel = this.utils.el('div', { id: 'crosshairSettings' });
-    panel.innerHTML = `
-        <label>Type:</label>
-        <select id="chType">
-            ${Object.keys(this.crosshairTypes)
-                .map(t => `<option value="${t}">${t}</option>`)
-                .join('')}
-        </select>
-        <label>Size (px):</label>
-        <input id="chSize" type="number" value="30" min="5" max="200">
-        <label>Color:</label>
-        <input id="chColor" type="color" value="#ff0000">
-        <label>Thickness (px):</label>
-        <input id="chThickness" type="number" value="2" min="1" max="10">
-        <label>Opacity (0–1):</label>
-        <input id="chOpacity" type="number" value="1" step="0.1" min="0.1" max="1">
-    `;
+            // --- SETTINGS PANEL ---
+            createSettingsPanel() {
+                // Button to open floating crosshair picker
+                const panel = this.utils.el('div', { id: 'crosshairSettings' });
+                
+                const openPickerBtn = document.createElement('button');
+                openPickerBtn.textContent = 'Open Crosshair Picker';
+                Object.assign(openPickerBtn.style, { marginBottom: '10px', cursor: 'pointer' });
+                panel.appendChild(openPickerBtn);
 
-    // Attach live update listeners after the DOM elements exist
-    const inputs = panel.querySelectorAll('input, select');
-    inputs.forEach(el => {
-        el.addEventListener('input', () => {
-            this.updateCrosshair();
-            this.saveSettings();
-        });
-        el.addEventListener('change', () => {
-            this.updateCrosshair();
-            this.saveSettings();
-        });
-    });
-    this.loadSettings();
-    return panel;
-}
+                openPickerBtn.addEventListener('click', () => {
+                    // Remove existing floating panel if any
+                    const existing = document.getElementById('crosshairPickerWindow');
+                    if (existing) existing.remove();
+
+                    const floatingPanel = document.createElement('div');
+                    floatingPanel.id = 'crosshairPickerWindow';
+                    Object.assign(floatingPanel.style, {
+                        position: 'absolute',
+                        top: '50px',
+                        left: '50px',
+                        width: '220px',
+                        padding: '10px',
+                        background: '#222',
+                        color: '#fff',
+                        border: '1px solid #fff',
+                        borderRadius: '8px',
+                        zIndex: '9999',
+                        boxShadow: '0 0 10px rgba(0,0,0,0.7)',
+                        cursor: 'move'
+                    });
+                    document.body.appendChild(floatingPanel);
+
+                    const title = document.createElement('h4');
+                    title.textContent = 'Crosshair Picker';
+                    Object.assign(title.style, { margin: '0 0 10px 0', fontSize: '1em', cursor: 'move' });
+                    floatingPanel.appendChild(title);
+
+                    const inputsConfig = [
+                        { label: 'Type:', id: 'chType', type: 'select', options: Object.keys(this.crosshairTypes) },
+                        { label: 'Size (px):', id: 'chSize', type: 'number', value: 30, min: 5, max: 200 },
+                        { label: 'Color:', id: 'chColor', type: 'color', value: '#ff0000' },
+                        { label: 'Thickness (px):', id: 'chThickness', type: 'number', value: 2, min: 1, max: 10 },
+                        { label: 'Opacity (0–1):', id: 'chOpacity', type: 'number', value: 1, step: 0.1, min: 0.1, max: 1 }
+                    ];
+
+                    const inputs = {};
+
+                    inputsConfig.forEach(config => {
+                        const row = document.createElement('div');
+                        Object.assign(row.style, { display: 'flex', flexDirection: 'column', marginBottom: '6px' });
+
+                        const label = document.createElement('label');
+                        label.textContent = config.label;
+                        label.htmlFor = config.id;
+                        row.appendChild(label);
+
+                        let input;
+                        if (config.type === 'select') {
+                            input = document.createElement('select');
+                            config.options.forEach(opt => {
+                                const option = document.createElement('option');
+                                option.value = opt;
+                                option.textContent = opt;
+                                input.appendChild(option);
+                            });
+                        } else {
+                            input = document.createElement('input');
+                            input.type = config.type;
+                            if (config.value !== undefined) input.value = config.value;
+                            if (config.min !== undefined) input.min = config.min;
+                            if (config.max !== undefined) input.max = config.max;
+                            if (config.step !== undefined) input.step = config.step;
+                        }
+
+                        input.id = config.id;
+                        Object.assign(input.style, { width: '100%', cursor: 'pointer' });
+                        row.appendChild(input);
+                        floatingPanel.appendChild(row);
+                        inputs[config.id] = input;
+
+                        input.addEventListener('input', () => {
+                            this.updateCrosshair();
+                            this.saveSettings();
+                        });
+                        input.addEventListener('change', () => {
+                            this.updateCrosshair();
+                            this.saveSettings();
+                        });
+                    });
+
+                    // Close button
+                    const closeBtn = document.createElement('button');
+                    closeBtn.textContent = 'Close';
+                    Object.assign(closeBtn.style, { marginTop: '6px', padding: '2px 6px', cursor: 'pointer' });
+                    closeBtn.addEventListener('click', () => floatingPanel.remove());
+                    floatingPanel.appendChild(closeBtn);
+
+                    // --- Make floating panel draggable ---
+                    let isDragging = false;
+                    let offsetX = 0;
+                    let offsetY = 0;
+
+                    title.addEventListener('mousedown', (e) => {
+                        isDragging = true;
+                        offsetX = e.clientX - floatingPanel.offsetLeft;
+                        offsetY = e.clientY - floatingPanel.offsetTop;
+                        document.body.style.userSelect = 'none';
+                    });
+
+                    document.addEventListener('mousemove', (e) => {
+                        if (!isDragging) return;
+                        floatingPanel.style.left = `${e.clientX - offsetX}px`;
+                        floatingPanel.style.top = `${e.clientY - offsetY}px`;
+                    });
+
+                    document.addEventListener('mouseup', () => {
+                        isDragging = false;
+                        document.body.style.userSelect = '';
+                    });
+
+                    // Load saved settings
+                    this.loadSettings();
+                });
+
+                return panel;
+            }
+
 
 
     // --- UPDATE & INIT ---
     updateCrosshair() {
-        const type = document.getElementById('chType')?.value || 'Dot';
+        const type = document.getElementById('chType')?.value || 'None';
         const size = parseInt(document.getElementById('chSize')?.value || 30, 10);
         const color = document.getElementById('chColor')?.value || '#ff0000';
         const thickness = parseInt(document.getElementById('chThickness')?.value || 2, 10);

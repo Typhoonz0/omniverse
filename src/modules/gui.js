@@ -115,38 +115,54 @@ function GUI(utils, theme, themes, currentPreset, CrosshairOverlay) {
     function createColorEditor(box, theme) {
         const inputs = {};
 
-        if (!box.querySelector('#themePresetSelect')) {
-            const presetRow = utils.el('div');
-            Object.assign(presetRow.style, {
-                display: 'flex',
-                alignItems: 'center',
-                marginBottom: '8px'
-            });
+        // --- THEME PRESET WINDOW ---
+        function openPresetWindow() {
+            // Remove existing window if any
+            const existing = document.getElementById('themePresetWindow');
+            if (existing) existing.remove();
 
-            const presetLabel = utils.el('label', { text: 'Theme Preset:' });
-            Object.assign(presetLabel.style, {
-                flex: '1',
-                fontSize: '0.9em'
+            const presetWindow = document.createElement('div');
+            presetWindow.id = 'themePresetWindow';
+            Object.assign(presetWindow.style, {
+                position: 'absolute',
+                top: '50px',
+                right: '200px',
+                width: '200px',
+                padding: '10px',
+                background: '#222',
+                color: '#fff',
+                border: '1px solid #fff',
+                borderRadius: '8px',
+                zIndex: '9999',
+                boxShadow: '0 0 10px rgba(0,0,0,0.7)',
             });
+            document.body.appendChild(presetWindow);
 
-            const presetSelect = utils.el('select');
+            const title = document.createElement('h4');
+            title.textContent = 'Theme Preset';
+            Object.assign(title.style, { margin: '0 0 10px 0', fontSize: '1em' });
+            presetWindow.appendChild(title);
+
+            const presetSelect = document.createElement('select');
             presetSelect.id = 'themePresetSelect';
             Object.keys(themes).forEach(name => {
-                const option = utils.el('option', { text: name, value: name });
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
                 if (name === currentPreset) option.selected = true;
                 presetSelect.appendChild(option);
             });
-            const customOption = utils.el('option', { text: 'Custom', value: 'custom' });
+            const customOption = document.createElement('option');
+            customOption.value = 'custom';
+            customOption.textContent = 'Custom';
             if (currentPreset === 'custom') customOption.selected = true;
             presetSelect.appendChild(customOption);
-
-            presetRow.appendChild(presetLabel);
-            presetRow.appendChild(presetSelect);
-            box.appendChild(presetRow);
+            presetWindow.appendChild(presetSelect);
 
             presetSelect.addEventListener('change', () => {
                 const selected = presetSelect.value;
                 if (selected === 'custom') return;
+
                 currentPreset = selected;
                 const presetTheme = themes[selected];
                 for (const key in presetTheme) {
@@ -158,8 +174,21 @@ function GUI(utils, theme, themes, currentPreset, CrosshairOverlay) {
                 }
                 saveTheme();
             });
+
+            // Close button
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = 'Close';
+            Object.assign(closeBtn.style, { marginTop: '10px', padding: '4px 8px', cursor: 'pointer' });
+            closeBtn.addEventListener('click', () => presetWindow.remove());
+            presetWindow.appendChild(closeBtn);
         }
 
+        // Add a button to open the preset window
+        const openPresetBtn = document.createElement('button');
+        openPresetBtn.textContent = 'Open Theme Preset';
+        Object.assign(openPresetBtn.style, { marginBottom: '10px', cursor: 'pointer' });
+        openPresetBtn.addEventListener('click', openPresetWindow);
+        box.appendChild(openPresetBtn);
         // Add color inputs
         for (const key in theme) {
             if (!/^#[0-9A-Fa-f]{3,6}$/.test(theme[key])) continue;
@@ -446,145 +475,145 @@ function GUI(utils, theme, themes, currentPreset, CrosshairOverlay) {
 
     document.body.appendChild(gui);
 
-// --- Tabs container ---
-const tabs = utils.el('div');
-Object.assign(tabs.style, {
-    display: 'flex',
-    gap: '4px',
-    marginBottom: '8px',
-    flexDirection: 'column', // stack title above buttons
-});
-
-const title = utils.el('div', {
-    text: `Omniverse | Toggle: ${settings.toggleKey}`
-});
-title.style.fontWeight = 'bold';
-title.style.textAlign = 'center';
-tabs.appendChild(title);
-
-// Tab buttons
-const mainTabBtn = utils.el('button', { text: 'Main' });
-const settingsTabBtn = utils.el('button', { text: 'Settings' });
-const themeTabBtn = utils.el('button', { text: 'Theme' });
-const crosshairTabBtn = utils.el('button', { text: 'Crosshair Editor' });
-
-[mainTabBtn, settingsTabBtn, themeTabBtn, crosshairTabBtn].forEach(btn => {
-    Object.assign(btn.style, {
-        flex: 1,
-        padding: '6px 12px',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontWeight: 'bold',
-        color: theme.red1,
+    // --- Tabs container ---
+    const tabs = utils.el('div');
+    Object.assign(tabs.style, {
+        display: 'flex',
+        gap: '4px',
+        marginBottom: '8px',
+        flexDirection: 'column', // stack title above buttons
     });
-    tabs.appendChild(btn);
-});
 
-gui.insertBefore(tabs, gui.firstChild);
+    const title = utils.el('div', {
+        text: `Omniverse | Toggle: ${settings.toggleKey}`
+    });
+    title.style.fontWeight = 'bold';
+    title.style.textAlign = 'center';
+    tabs.appendChild(title);
 
-// --- Main GUI content ---
-const mainGui = utils.el('div');
-Object.assign(mainGui.style, {
-    padding: '20px',
-    width: '200px',
-    backdropFilter: 'blur(10px)',
-    color: theme.text1,
-    borderRadius: '10px',
-    zIndex: 100000,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    cursor: 'move',
-});
+    // Tab buttons
+    const mainTabBtn = utils.el('button', { text: 'Main' });
+    const settingsTabBtn = utils.el('button', { text: 'Settings' });
+    const themeTabBtn = utils.el('button', { text: 'Theme' });
+    const crosshairTabBtn = utils.el('button', { text: 'Crosshair Editor' });
 
-// Move all existing children (except tabs) into mainGui
-while (gui.children.length > 1) {
-    mainGui.appendChild(gui.children[1]);
-}
-gui.appendChild(mainGui);
-
-// --- Theme tab ---
-const themeTabContainer = utils.el('div');
-Object.assign(themeTabContainer.style, {
-    display: 'none',
-    flexDirection: 'column',
-    gap: '8px',
-    padding: '8px',
-});
-createColorEditor(themeTabContainer, theme);
-gui.appendChild(themeTabContainer);
-
-// --- Settings tab ---
-const settingsTabContainer = utils.el('div');
-Object.assign(settingsTabContainer.style, {
-    display: 'none',
-    flexDirection: 'column',
-    gap: '8px',
-    padding: '8px',
-});
-settingsTabContainer.appendChild(box); // your original settings overlay content
-gui.appendChild(settingsTabContainer);
-
-// --- Crosshair tab ---
-const crosshairTabContainer = utils.el('div');
-Object.assign(crosshairTabContainer.style, {
-    display: 'none',
-    flexDirection: 'column',
-    gap: '8px',
-    padding: '8px',
-});
-const a = new CrosshairOverlay(utils); // from your crosshair editor
-let chPanel = a.createSettingsPanel();
-
-chPanel.style.position = 'relative'; // IMPORTANT: override fixed positioning
-console.log(chPanel);
-crosshairTabContainer.appendChild(chPanel);
-gui.appendChild(crosshairTabContainer);
-a.init();
-
-// --- Tab switching ---
-function showTab(tab) {
-    // Hide all tabs
-    mainGui.style.display = 'none';
-    settingsTabContainer.style.display = 'none';
-    themeTabContainer.style.display = 'none';
-    crosshairTabContainer.style.display = 'none';
-
-    // Reset button styles
     [mainTabBtn, settingsTabBtn, themeTabBtn, crosshairTabBtn].forEach(btn => {
-        btn.style.background = theme.red1;
-        btn.style.color = theme.text1;
+        Object.assign(btn.style, {
+            flex: 1,
+            padding: '6px 12px',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            color: theme.red1,
+        });
+        tabs.appendChild(btn);
     });
 
-    // Show selected tab
-    if (tab === 'main') {
-        mainGui.style.display = 'flex';
-        mainTabBtn.style.background = theme.blue1;
-    } else if (tab === 'settings') {
-        settingsTabContainer.style.display = 'flex';
-        settingsTabBtn.style.background = theme.blue1;
-    } else if (tab === 'theme') {
-        themeTabContainer.style.display = 'flex';
-        themeTabBtn.style.background = theme.blue1;
-    } else if (tab === 'crosshair') {
-        crosshairTabContainer.style.display = 'flex';
-        crosshairTabBtn.style.background = theme.blue1;
+    gui.insertBefore(tabs, gui.firstChild);
+
+    // --- Main GUI content ---
+    const mainGui = utils.el('div');
+    Object.assign(mainGui.style, {
+        padding: '20px',
+        width: '200px',
+        backdropFilter: 'blur(10px)',
+        color: theme.text1,
+        borderRadius: '10px',
+        zIndex: 100000,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        cursor: 'move',
+    });
+
+    // Move all existing children (except tabs) into mainGui
+    while (gui.children.length > 1) {
+        mainGui.appendChild(gui.children[1]);
     }
-}
+    gui.appendChild(mainGui);
 
-// Initial tab
-showTab('main');
+    // --- Theme tab ---
+    const themeTabContainer = utils.el('div');
+    Object.assign(themeTabContainer.style, {
+        display: 'none',
+        flexDirection: 'column',
+        gap: '8px',
+        padding: '8px',
+    });
+    createColorEditor(themeTabContainer, theme);
+    gui.appendChild(themeTabContainer);
 
-// Tab button listeners
-mainTabBtn.addEventListener('click', () => showTab('main'));
-settingsTabBtn.addEventListener('click', () => showTab('settings'));
-themeTabBtn.addEventListener('click', () => showTab('theme'));
-crosshairTabBtn.addEventListener('click', () => showTab('crosshair'));
+    // --- Settings tab ---
+    const settingsTabContainer = utils.el('div');
+    Object.assign(settingsTabContainer.style, {
+        display: 'none',
+        flexDirection: 'column',
+        gap: '8px',
+        padding: '8px',
+    });
+    settingsTabContainer.appendChild(box); // your original settings overlay content
+    gui.appendChild(settingsTabContainer);
 
-// Hide old settings overlay if exists
-if (settingsBtn) settingsBtn.remove();
-if (settingsOverlay) settingsOverlay.style.display = 'none';
+    // --- Crosshair tab ---
+    const crosshairTabContainer = utils.el('div');
+    Object.assign(crosshairTabContainer.style, {
+        display: 'none',
+        flexDirection: 'column',
+        gap: '8px',
+        padding: '8px',
+    });
+    const a = new CrosshairOverlay(utils); // from your crosshair editor
+    let chPanel = a.createSettingsPanel();
+
+    chPanel.style.position = 'relative'; // IMPORTANT: override fixed positioning
+    console.log(chPanel);
+    crosshairTabContainer.appendChild(chPanel);
+    gui.appendChild(crosshairTabContainer);
+    a.init();
+
+    // --- Tab switching ---
+    function showTab(tab) {
+        // Hide all tabs
+        mainGui.style.display = 'none';
+        settingsTabContainer.style.display = 'none';
+        themeTabContainer.style.display = 'none';
+        crosshairTabContainer.style.display = 'none';
+
+        // Reset button styles
+        [mainTabBtn, settingsTabBtn, themeTabBtn, crosshairTabBtn].forEach(btn => {
+            btn.style.background = theme.red1;
+            btn.style.color = theme.text1;
+        });
+
+        // Show selected tab
+        if (tab === 'main') {
+            mainGui.style.display = 'flex';
+            mainTabBtn.style.background = theme.blue1;
+        } else if (tab === 'settings') {
+            settingsTabContainer.style.display = 'flex';
+            settingsTabBtn.style.background = theme.blue1;
+        } else if (tab === 'theme') {
+            themeTabContainer.style.display = 'flex';
+            themeTabBtn.style.background = theme.blue1;
+        } else if (tab === 'crosshair') {
+            crosshairTabContainer.style.display = 'flex';
+            crosshairTabBtn.style.background = theme.blue1;
+        }
+    }
+
+    // Initial tab
+    showTab('main');
+
+    // Tab button listeners
+    mainTabBtn.addEventListener('click', () => showTab('main'));
+    settingsTabBtn.addEventListener('click', () => showTab('settings'));
+    themeTabBtn.addEventListener('click', () => showTab('theme'));
+    crosshairTabBtn.addEventListener('click', () => showTab('crosshair'));
+
+    // Hide old settings overlay if exists
+    if (settingsBtn) settingsBtn.remove();
+    if (settingsOverlay) settingsOverlay.style.display = 'none';
 
 
     // overlay buttons container & state
