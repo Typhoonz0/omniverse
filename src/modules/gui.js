@@ -464,30 +464,76 @@ if (omniversePath !== base) {
     // Usage
     createColorEditor(box, theme);
 
-    // === MINIMAL STATS TOGGLE ===
-    let minimalStats = utils.getRaw('minimalstats') === 'true';
-
-    const minimalBtn = utils.el('button', {
-        text: `Minimal Stats: ${minimalStats ? 'ON' : 'OFF'}`
-    });
-    Object.assign(minimalBtn.style, {
-        padding: '6px 12px',
-        border: 'none',
+    // === STATS TOGGLES ===
+    const statsContainer = utils.el('div');
+    Object.assign(statsContainer.style, {
+        background: 'rgba(0,0,0,0.2)',
+        padding: '10px',
         borderRadius: '6px',
-        cursor: 'pointer',
-        fontWeight: 'bold',
-        color: theme.text1,
-        background: minimalStats ? theme.green1 : theme.red3
+        marginBottom: '10px'
     });
-    box.appendChild(minimalBtn);
 
-    minimalBtn.addEventListener('click', () => {
-        minimalStats = !minimalStats;
-        utils.setRaw('minimalstats', minimalStats ? 'true' : 'false');
-        minimalBtn.textContent = `Minimal Stats: ${minimalStats ? 'ON' : 'OFF'}`;
-        minimalBtn.style.background = minimalStats ? theme.green1 : theme.red3;
-        toggleMinimalStats(minimalStats); // apply changes immediately
+    const statsTitle = utils.el('div', { text: 'Stats Display' });
+    Object.assign(statsTitle.style, {
+        fontWeight: 'bold',
+        marginBottom: '8px'
     });
+    statsContainer.appendChild(statsTitle);
+
+    const checkboxContainer = utils.el('div');
+    Object.assign(checkboxContainer.style, {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '8px'
+    });
+    statsContainer.appendChild(checkboxContainer);
+
+    const statOptions = [
+        { id: 'showDate', label: 'Date' },
+        { id: 'showTime', label: 'Time' },
+        { id: 'showOS', label: 'OS' },
+        { id: 'showCPU', label: 'CPU' },
+        { id: 'showServer', label: 'Server' },
+        { id: 'showSens', label: 'Sens' },
+        { id: 'showFPS', label: 'FPS' },
+        { id: 'showPing', label: 'Ping' }
+    ];
+
+    statOptions.forEach(stat => {
+        const row = utils.el('div');
+        Object.assign(row.style, {
+            display: 'flex',
+            alignItems: 'center',
+            minWidth: 'fit-content'
+        });
+
+        const checkbox = utils.el('input');
+        Object.assign(checkbox, {
+            type: 'checkbox',
+            id: stat.id,
+            checked: utils.getRaw(stat.id) !== 'false' // default to true
+        });
+        Object.assign(checkbox.style, {
+            marginRight: '4px'
+        });
+
+        const label = utils.el('label', { text: stat.label });
+        Object.assign(label.style, {
+            color: theme.text1,
+            fontSize: '0.9em'
+        });
+
+        checkbox.addEventListener('change', () => {
+            utils.setRaw(stat.id, checkbox.checked ? 'true' : 'false');
+            updateStatsVisibility(); // Function to be implemented in stats.js
+        });
+
+        row.appendChild(checkbox);
+        row.appendChild(label);
+        checkboxContainer.appendChild(row);
+    });
+
+    box.appendChild(statsContainer);
 
 
 
