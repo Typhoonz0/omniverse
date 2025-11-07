@@ -1,44 +1,42 @@
-function GUI(utils, theme, themes, currentPreset) {
-    // Find the omniverse folder automatically
+function GUI(utils, theme, themes, currentPreset, CrosshairOverlay) {
+
     const fs = require('fs');
     const path = require('path');
 
-function findFolder(startDir, folderName) {
-    let dir = startDir;
-    while (!fs.existsSync(path.join(dir, folderName)) && path.dirname(dir) !== dir) {
-        dir = path.dirname(dir);
+    function findFolder(startDir, folderName) {
+        let dir = startDir;
+        while (!fs.existsSync(path.join(dir, folderName)) && path.dirname(dir) !== dir) {
+            dir = path.dirname(dir);
+        }
+        if (fs.existsSync(path.join(dir, folderName))) return path.join(dir, folderName);
+        return null;
     }
-    if (fs.existsSync(path.join(dir, folderName))) return path.join(dir, folderName);
-    return null;
-}
 
-let dir  = __dirname;
-console.log(__dirname);
-let omniversePath = findFolder(dir, 'omniverse');
-let base;
-if (!omniversePath) {
-    // If omniverse not found, repeat search for 'app'
-    omniversePath = findFolder(dir, 'app');
-}
-if (!omniversePath) {
-    omniversePath = findFolder(dir, 'src');
-    base = omniversePath;
-}
+    let dir = __dirname;
+    console.log(__dirname);
+    let omniversePath = findFolder(dir, 'omniverse');
+    let base;
+    if (!omniversePath) {
+        omniversePath = findFolder(dir, 'app');
+    }
+    if (!omniversePath) {
+        omniversePath = findFolder(dir, 'src');
+        base = omniversePath;
+    }
 
 
-if (!omniversePath) {
-    console.error('Neither "omniverse" nor "app" was found!');
-} else {
+    if (!omniversePath) {
+        console.error('Neither "omniverse" nor "app" was found!');
+    } else {
+        console.log('Using folder:', omniversePath);
+    }
+
     console.log('Using folder:', omniversePath);
-}
-
-console.log('Using folder:', omniversePath);
-if (omniversePath !== base) {
-    base = path.join(omniversePath, 'src');
-}
+    if (omniversePath !== base) {
+        base = path.join(omniversePath, 'src');
+    }
     const settingsPath = path.join(omniversePath, 'src', "settings.json");
 
-    // Helper to read/write JSON safely
     function readSettings() {
         try {
             if (!fs.existsSync(settingsPath)) return {};
@@ -55,250 +53,18 @@ if (omniversePath !== base) {
             console.error('Error writing settings:', err);
         }
     }
-
-    const overlayDefs = [{
-            id: 'dsOverlayStats',
-            name: 'Overlay Stats',
-            settingsId: null
-        },
-        {
-            id: 'keyDisplayOverlay',
-            name: 'Key Display',
-            settingsId: null
-        },
-        {
-            id: 'crosshairSettings',
-            name: 'Crosshair Editor',
-            settingsId: 'crosshairSettings'
-        }
-    ];
-
-    const gui = utils.el('div', {
-        id: 'dsGuiContainer'
-    });
-
-    Object.assign(gui.style, {
-        position: 'fixed',
-        top: '10px',
-        right: '10px',
-        padding: '10px',
-        background: 'rgba(0,0,0,0.4)',
-        backdropFilter: 'blur(10px)',
-        color: theme.text1,
-        borderRadius: '8px',
-        zIndex: '100000',
-        border: `3px solid #${theme.red1}`,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
-        minWidth: '180px',
-        cursor: 'move'
-    });
-    
-    document.body.appendChild(gui);
     let settings = readSettings();
-    const title = utils.el('div', {
-        text: `Omniverse | Toggle: ${settings.toggleKey}`
-    });
-
-    title.style.fontWeight = 'bold';
-    title.style.textAlign = 'center';
-    gui.appendChild(title);
-
-    // overlay buttons container & state
-    const overlayButtons = {};
-    const state = {};
-    overlayDefs.forEach(def => {
-        const saved = utils.getRaw(def.id);
-        state[def.id] = saved === null ? true : (saved === 'true' || saved === true);
-    });
-
-    for (const def of overlayDefs) {
-        const btn = utils.el('button', {
-            text: `${def.name}: ${state[def.id] ? 'ON' : 'OFF'}`
-        });
-        Object.assign(btn.style, {
-            padding: '6px 12px',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontWeight: 'bold',
-            color: theme.text1
-        });
-        gui.appendChild(btn);
-        overlayButtons[def.id] = btn;
-    }
-
-    // Fetch rank button
-    const fetchRankBtn = utils.el('button', {
-        text: 'Fetch My Rank'
-    });
-    Object.assign(fetchRankBtn.style, {
-        padding: '6px 12px',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontWeight: 'bold',
-        background: theme.blue1,
-        color: theme.text1
-    });
-    gui.appendChild(fetchRankBtn);
-    fetchRankBtn.addEventListener('click', async () => {
-        const overlay = document.createElement('div');
-        overlay.style.position = 'fixed';
-        overlay.style.top = 0;
-        overlay.style.left = 0;
-        overlay.style.width = '100vw';
-        overlay.style.height = '100vh';
-        overlay.style.background = 'rgba(0,0,0,0.6)';
-        overlay.style.display = 'flex';
-        overlay.style.justifyContent = 'center';
-        overlay.style.alignItems = 'center';
-        overlay.style.zIndex = 9999;
-
-        const box = document.createElement('div');
-        box.style.background = '#1e1e1e';
-        box.style.padding = '30px';
-        box.style.borderRadius = '10px';
-        box.style.boxShadow = '0 0 20px rgba(0,0,0,0.5)';
-        box.style.textAlign = 'center';
-        box.style.color = theme.text1;
-        box.style.fontFamily = 'Arial, sans-serif';
-
-        const label = document.createElement('div');
-        label.textContent = 'Enter your username:';
-        label.style.marginBottom = '10px';
-
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.style.padding = '10px';
-        input.style.borderRadius = '5px';
-        input.style.border = 'none';
-        input.style.width = '200px';
-        input.style.marginBottom = '10px';
-        input.style.fontSize = '16px';
-
-        const submit = document.createElement('button');
-        submit.textContent = 'Submit';
-        submit.style.padding = '10px 20px';
-        submit.style.border = 'none';
-        submit.style.borderRadius = '5px';
-        submit.style.background = '#4CAF50';
-        submit.style.color = theme.text1;
-        submit.style.cursor = 'pointer';
-        submit.style.fontSize = '16px';
-
-        submit.addEventListener('click', async () => {
-            const username = input.value.trim();
-            console.log(username);
-            if (!username) return;
-
-            try {
-                const rank = await fetchLeaderboardRank(username);
-                alert(`${rank}`);
-                document.body.removeChild(overlay);
-            } catch (err) {
-                console.error('Failed to fetch leaderboard rank:', err);
-                alert('Failed to fetch rank');
-                document.body.removeChild(overlay);
-            }
-        });
-
-
-        box.appendChild(label);
-        box.appendChild(input);
-        box.appendChild(submit);
-        overlay.appendChild(box);
-        document.body.appendChild(overlay);
-        input.focus();
-    });
-
-    // Reset button
-    const resetBtn = utils.el('button', {
-        text: 'Reset Omniverse'
-    });
-    Object.assign(resetBtn.style, {
-        padding: '6px 12px',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontWeight: 'bold',
-        background: theme.red3,
-        color: theme.text1
-    });
-    gui.appendChild(resetBtn);
-    resetBtn.addEventListener('click', () => {
-        const idsToReset = ['dsOverlayStats', 'keyDisplayOverlay', 'dsGuiContainer', 'minimalstats', 'theme'];
-        idsToReset.forEach(id => {
-            utils.remove(id + '_pos');
-            utils.remove(id);
-        });
-        location.reload();
-    });
-
-    // Create the update button
-    const updateBtn = utils.el('button', {
-        text: 'Checking updates...'
-    });
-    Object.assign(updateBtn.style, {
-        padding: '6px 12px',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontWeight: 'bold',
-        background: theme.yellow1,
-        color: theme.text1
-    });
-    // Append it to the existing GUI container
-    gui.appendChild(updateBtn);
-
-
-
-
-    async function checkForUpdates() {
-        try {
-            // Fetch latest version from GitHub
-            const res = await fetch('https://raw.githubusercontent.com/Typhoonz0/omniverse/main/version.txt');
-            const remoteVersion = (await res.text()).trim();
-            let dir = __dirname;
-            while (!fs.existsSync(path.join(dir, 'omniverse')) && path.dirname(dir) !== dir)
-                dir = path.dirname(dir);
-        
-            let versionPath = path.join(omniversePath, "version.txt");
-            console.log(base, versionPath);
-            if (base === omniversePath) {
-                versionPath = path.join(omniversePath, "..","version.txt");
-            }
-            console.log(versionPath);
-            let localVersion = 'unknown';
-
-            try {
-                localVersion = fs.readFileSync(versionPath, 'utf8').trim();
-            } catch (err) {
-                console.error('Failed to read version.txt:', err);
-            }
-
-            console.log('Local version:', localVersion);
-            if (remoteVersion !== localVersion) {
-                updateBtn.textContent = "Update Available!";
-                updateBtn.style.background = "#4caf50";
-                updateBtn.addEventListener('click', () => {
-                    window.open('https://github.com/Typhoonz0/omniverse', '_blank');
-                });
-            } else {
-                updateBtn.textContent = "Up to Date";
-                updateBtn.style.background = theme.blue1;
-                updateBtn.disabled = true;
-            }
-        } catch (err) {
-            console.error("Update check failed:", err);
-            updateBtn.textContent = "Update Check Failed";
-            updateBtn.style.background = theme.red3;
-        }
-    }
-
-    // Run update check after GUI has loaded
-    checkForUpdates();
+    const overlayDefs = [{
+        id: 'dsOverlayStats',
+        name: 'Overlay Stats',
+        settingsId: null
+    },
+    {
+        id: 'keyDisplayOverlay',
+        name: 'Key Display',
+        settingsId: null
+    },
+    ];
 
     const settingsBtn = utils.el('button', {
         text: 'Settings'
@@ -312,51 +78,36 @@ if (omniversePath !== base) {
         background: theme.purple1,
         color: theme.text1
     });
-    gui.appendChild(settingsBtn);
+
 
     const settingsOverlay = utils.el('div', {
         id: 'omniverseSettingsOverlay'
     });
     Object.assign(settingsOverlay.style, {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
         display: 'none',
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 9999
     });
-    document.body.appendChild(settingsOverlay);
+
 
     const box = utils.el('div');
     Object.assign(box.style, {
-        padding: '20px',
-        borderRadius: '10px',
-        width: '320px',
-        background: 'rgba(0,0,0,0.4)',
-        backdropFilter: 'blur(10px)',
-        color: theme.text1,
-        boxShadow: '0 0 20px rgba(0,0,0,0.5)',
         display: 'flex',
         flexDirection: 'column',
         gap: '12px',
+        padding: '10px',
+        color: theme.text1,
+        borderRadius: '10px',
+        width: '100%',
+        boxSizing: 'border-box',
     });
+
+
     settingsOverlay.appendChild(box);
 
-    const settingstitle = utils.el('div', {
-        text: 'Omniverse Settings'
-    });
-    Object.assign(settingstitle.style, {
-        fontSize: '18px',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: '8px'
-    });
-    box.appendChild(settingstitle);
 
-    
+
     function saveTheme() {
         utils.setRaw('theme', JSON.stringify(theme));
     }
@@ -364,7 +115,6 @@ if (omniversePath !== base) {
     function createColorEditor(box, theme) {
         const inputs = {};
 
-        // Only add preset selector once
         if (!box.querySelector('#themePresetSelect')) {
             const presetRow = utils.el('div');
             Object.assign(presetRow.style, {
@@ -461,14 +211,10 @@ if (omniversePath !== base) {
         }
     }
 
-    // Usage
-    createColorEditor(box, theme);
 
     // === STATS TOGGLES ===
     const statsContainer = utils.el('div');
     Object.assign(statsContainer.style, {
-        background: 'rgba(0,0,0,0.2)',
-        padding: '10px',
         borderRadius: '6px',
         marginBottom: '10px'
     });
@@ -588,8 +334,8 @@ if (omniversePath !== base) {
 
 
     // === ADBLOCKER BUTTON ===
-    
-    let adblocker = settings.adblocker ?? true; // default true
+
+    let adblocker = settings.adblocker ?? false; // default false
 
     const adblockBtn = utils.el('button', {
         text: `Adblocker (breaks skin swapper): ${adblocker ? 'ON' : 'OFF'}`
@@ -668,49 +414,373 @@ if (omniversePath !== base) {
         highPerfBtn.style.background = highPerf ? theme.green1 : theme.red3;
     });
 
-    // === APPLY BUTTON ===
-    const applyThemeButton = utils.el('button', {
-        text: 'Apply Theme (reloads page)'
-    });
-    Object.assign(applyThemeButton.style, {
-        padding: '8px',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        background: theme.purple1,
-        color: theme.text1,
-        fontWeight: 'bold'
-    });
-    applyThemeButton.addEventListener('click', () => {
-        window.location.reload();
-    });
-    box.appendChild(applyThemeButton);
-
-    // === CLOSE BUTTON ===
-    const closeBtn = utils.el('button', {
-        text: 'Close'
-    });
-    Object.assign(closeBtn.style, {
-        padding: '8px',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        background: theme.red3,
-        color: theme.text1,
-        fontWeight: 'bold'
-    });
-    closeBtn.addEventListener('click', () => {
-        settingsOverlay.style.display = 'none';
-    });
-    box.appendChild(closeBtn);
-
     // === SETTINGS TOGGLE BUTTON ===
     settingsBtn.addEventListener('click', () => {
         settingsOverlay.style.display =
             settingsOverlay.style.display === 'none' ? 'flex' : 'none';
     });
 
-    utils.makeDraggable(settingsOverlay);
+
+    const gui = utils.el('div', {
+        id: 'dsGuiContainer'
+    });
+
+    Object.assign(gui.style, {
+        position: 'fixed',
+        top: '10px',
+        right: '10px',
+        width: '200px',                        // same as your box
+        paddingTop: '20px',
+        paddingBottom: '20px',
+        //background: 'rgba(0,0,0,0.4)',
+        //backdropFilter: 'blur(10px)',
+        color: theme.text1,
+        borderRadius: '10px',
+        boxShadow: '0 0 20px rgba(0,0,0,0.5)',
+        zIndex: 100000,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        cursor: 'move',
+    });
+
+    document.body.appendChild(gui);
+
+// --- Tabs container ---
+const tabs = utils.el('div');
+Object.assign(tabs.style, {
+    display: 'flex',
+    gap: '4px',
+    marginBottom: '8px',
+    flexDirection: 'column', // stack title above buttons
+});
+
+const title = utils.el('div', {
+    text: `Omniverse | Toggle: ${settings.toggleKey}`
+});
+title.style.fontWeight = 'bold';
+title.style.textAlign = 'center';
+tabs.appendChild(title);
+
+// Tab buttons
+const mainTabBtn = utils.el('button', { text: 'Main' });
+const settingsTabBtn = utils.el('button', { text: 'Settings' });
+const themeTabBtn = utils.el('button', { text: 'Theme' });
+const crosshairTabBtn = utils.el('button', { text: 'Crosshair Editor' });
+
+[mainTabBtn, settingsTabBtn, themeTabBtn, crosshairTabBtn].forEach(btn => {
+    Object.assign(btn.style, {
+        flex: 1,
+        padding: '6px 12px',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontWeight: 'bold',
+        color: theme.red1,
+    });
+    tabs.appendChild(btn);
+});
+
+gui.insertBefore(tabs, gui.firstChild);
+
+// --- Main GUI content ---
+const mainGui = utils.el('div');
+Object.assign(mainGui.style, {
+    padding: '20px',
+    width: '200px',
+    backdropFilter: 'blur(10px)',
+    color: theme.text1,
+    borderRadius: '10px',
+    zIndex: 100000,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    cursor: 'move',
+});
+
+// Move all existing children (except tabs) into mainGui
+while (gui.children.length > 1) {
+    mainGui.appendChild(gui.children[1]);
+}
+gui.appendChild(mainGui);
+
+// --- Theme tab ---
+const themeTabContainer = utils.el('div');
+Object.assign(themeTabContainer.style, {
+    display: 'none',
+    flexDirection: 'column',
+    gap: '8px',
+    padding: '8px',
+});
+createColorEditor(themeTabContainer, theme);
+gui.appendChild(themeTabContainer);
+
+// --- Settings tab ---
+const settingsTabContainer = utils.el('div');
+Object.assign(settingsTabContainer.style, {
+    display: 'none',
+    flexDirection: 'column',
+    gap: '8px',
+    padding: '8px',
+});
+settingsTabContainer.appendChild(box); // your original settings overlay content
+gui.appendChild(settingsTabContainer);
+
+// --- Crosshair tab ---
+const crosshairTabContainer = utils.el('div');
+Object.assign(crosshairTabContainer.style, {
+    display: 'none',
+    flexDirection: 'column',
+    gap: '8px',
+    padding: '8px',
+});
+const a = new CrosshairOverlay(utils); // from your crosshair editor
+let chPanel = a.createSettingsPanel();
+
+chPanel.style.position = 'relative'; // IMPORTANT: override fixed positioning
+console.log(chPanel);
+crosshairTabContainer.appendChild(chPanel);
+gui.appendChild(crosshairTabContainer);
+a.init();
+
+// --- Tab switching ---
+function showTab(tab) {
+    // Hide all tabs
+    mainGui.style.display = 'none';
+    settingsTabContainer.style.display = 'none';
+    themeTabContainer.style.display = 'none';
+    crosshairTabContainer.style.display = 'none';
+
+    // Reset button styles
+    [mainTabBtn, settingsTabBtn, themeTabBtn, crosshairTabBtn].forEach(btn => {
+        btn.style.background = theme.red1;
+        btn.style.color = theme.text1;
+    });
+
+    // Show selected tab
+    if (tab === 'main') {
+        mainGui.style.display = 'flex';
+        mainTabBtn.style.background = theme.blue1;
+    } else if (tab === 'settings') {
+        settingsTabContainer.style.display = 'flex';
+        settingsTabBtn.style.background = theme.blue1;
+    } else if (tab === 'theme') {
+        themeTabContainer.style.display = 'flex';
+        themeTabBtn.style.background = theme.blue1;
+    } else if (tab === 'crosshair') {
+        crosshairTabContainer.style.display = 'flex';
+        crosshairTabBtn.style.background = theme.blue1;
+    }
+}
+
+// Initial tab
+showTab('main');
+
+// Tab button listeners
+mainTabBtn.addEventListener('click', () => showTab('main'));
+settingsTabBtn.addEventListener('click', () => showTab('settings'));
+themeTabBtn.addEventListener('click', () => showTab('theme'));
+crosshairTabBtn.addEventListener('click', () => showTab('crosshair'));
+
+// Hide old settings overlay if exists
+if (settingsBtn) settingsBtn.remove();
+if (settingsOverlay) settingsOverlay.style.display = 'none';
+
+
+    // overlay buttons container & state
+    const overlayButtons = {};
+    const state = {};
+    overlayDefs.forEach(def => {
+        const saved = utils.getRaw(def.id);
+        state[def.id] = saved === null ? true : (saved === 'true' || saved === true);
+    });
+
+    for (const def of overlayDefs) {
+        const btn = utils.el('button', {
+            text: `${def.name}: ${state[def.id] ? 'ON' : 'OFF'}`
+        });
+        Object.assign(btn.style, {
+            padding: '6px 12px',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            color: theme.text1
+        });
+        mainGui.appendChild(btn);
+        overlayButtons[def.id] = btn;
+    }
+
+    // Fetch rank button
+    const fetchRankBtn = utils.el('button', {
+        text: 'Fetch My Rank'
+    });
+    Object.assign(fetchRankBtn.style, {
+        padding: '6px 12px',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontWeight: 'bold',
+        background: theme.blue1,
+        color: theme.text1
+    });
+    mainGui.appendChild(fetchRankBtn);
+    fetchRankBtn.addEventListener('click', async () => {
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = 0;
+        overlay.style.left = 0;
+        overlay.style.width = '100vw';
+        overlay.style.height = '100vh';
+        overlay.style.background = 'rgba(0,0,0,0.6)';
+        overlay.style.display = 'flex';
+        overlay.style.justifyContent = 'center';
+        overlay.style.alignItems = 'center';
+        overlay.style.zIndex = 9999;
+
+        const box = document.createElement('div');
+        box.style.background = '#1e1e1e';
+        box.style.padding = '30px';
+        box.style.borderRadius = '10px';
+        box.style.boxShadow = '0 0 20px rgba(0,0,0,0.5)';
+        box.style.textAlign = 'center';
+        box.style.color = theme.text1;
+        box.style.fontFamily = 'Arial, sans-serif';
+
+        const label = document.createElement('div');
+        label.textContent = 'Enter your username:';
+        label.style.marginBottom = '10px';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.style.padding = '10px';
+        input.style.borderRadius = '5px';
+        input.style.border = 'none';
+        input.style.width = '200px';
+        input.style.marginBottom = '10px';
+        input.style.fontSize = '16px';
+
+        const submit = document.createElement('button');
+        submit.textContent = 'Submit';
+        submit.style.padding = '10px 20px';
+        submit.style.border = 'none';
+        submit.style.borderRadius = '5px';
+        submit.style.background = '#4CAF50';
+        submit.style.color = theme.text1;
+        submit.style.cursor = 'pointer';
+        submit.style.fontSize = '16px';
+
+        submit.addEventListener('click', async () => {
+            const username = input.value.trim();
+            console.log(username);
+            if (!username) return;
+
+            try {
+                const rank = await fetchLeaderboardRank(username);
+                alert(`${rank}`);
+                document.body.removeChild(overlay);
+            } catch (err) {
+                console.error('Failed to fetch leaderboard rank:', err);
+                alert('Failed to fetch rank');
+                document.body.removeChild(overlay);
+            }
+        });
+
+
+        box.appendChild(label);
+        box.appendChild(input);
+        box.appendChild(submit);
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+        input.focus();
+    });
+
+    // Reset button
+    const resetBtn = utils.el('button', {
+        text: 'Reset Omniverse'
+    });
+    Object.assign(resetBtn.style, {
+        padding: '6px 12px',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontWeight: 'bold',
+        background: theme.red3,
+        color: theme.text1
+    });
+    mainGui.appendChild(resetBtn);
+    resetBtn.addEventListener('click', () => {
+        const idsToReset = ['dsOverlayStats', 'keyDisplayOverlay', 'dsGuiContainer', 'minimalstats', 'theme'];
+        idsToReset.forEach(id => {
+            utils.remove(id + '_pos');
+            utils.remove(id);
+        });
+        location.reload();
+    });
+
+    // Create the update button
+    const updateBtn = utils.el('button', {
+        text: 'Checking updates...'
+    });
+    Object.assign(updateBtn.style, {
+        padding: '6px 12px',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontWeight: 'bold',
+        background: theme.yellow1,
+        color: theme.text1
+    });
+    // Append it to the existing GUI container
+    mainGui.appendChild(updateBtn);
+
+
+
+
+    async function checkForUpdates() {
+        try {
+            // Fetch latest version from GitHub
+            const res = await fetch('https://raw.githubusercontent.com/Typhoonz0/omniverse/main/version.txt');
+            const remoteVersion = (await res.text()).trim();
+            let dir = __dirname;
+            while (!fs.existsSync(path.join(dir, 'omniverse')) && path.dirname(dir) !== dir)
+                dir = path.dirname(dir);
+
+            let versionPath = path.join(omniversePath, "version.txt");
+            console.log(base, versionPath);
+            if (base === omniversePath) {
+                versionPath = path.join(omniversePath, "..", "version.txt");
+            }
+            console.log(versionPath);
+            let localVersion = 'unknown';
+
+            try {
+                localVersion = fs.readFileSync(versionPath, 'utf8').trim();
+            } catch (err) {
+                console.error('Failed to read version.txt:', err);
+            }
+
+            console.log('Local version:', localVersion);
+            if (remoteVersion !== localVersion) {
+                updateBtn.textContent = "Update Available!";
+                updateBtn.style.background = "#4caf50";
+                updateBtn.addEventListener('click', () => {
+                    window.open('https://github.com/Typhoonz0/omniverse', '_blank');
+                });
+            } else {
+                updateBtn.textContent = "Up to Date";
+                updateBtn.style.background = theme.blue1;
+                updateBtn.disabled = true;
+            }
+        } catch (err) {
+            console.error("Update check failed:", err);
+            updateBtn.textContent = "Update Check Failed";
+            updateBtn.style.background = theme.red3;
+        }
+    }
+
+    // Run update check after GUI has loaded
+    checkForUpdates();
 
     // Helper to update visibility and button text/style
     function updateVisibility(id, settingsId) {

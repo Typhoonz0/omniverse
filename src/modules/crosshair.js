@@ -1,58 +1,57 @@
-function CrosshairOverlay(utils, theme) {
+class CrosshairOverlay {
+    constructor(utils) {
+        this.utils = utils;
+        this.STORAGE_KEY = 'crosshairSettings_v1';
+        this.crosshairTypes = this.createCrosshairTypes();
+        this.injectStyles();
+    }
 
-    /* -------------------------
-       Component: Crosshair Editor
-       ------------------------- */
-    const STORAGE_KEY = 'crosshairSettings_v1';
-    const crosshairCSS = `
-    #customCrosshair {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        pointer-events: none;
-        z-index: 9999;
+    // --- STYLES ---
+    injectStyles() {
+        const css = `
+        #customCrosshair {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 9999;
+        }
+        #crosshairSettings {
+            background: rgba(20,20,20,0.6);
+            backdrop-filter: blur(10px);
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+            border-radius: 12px;
+            box-shadow: 0 0 12px rgba(0,0,0,0.4);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: all 0.3s ease;
+            z-index: 9999;
+        }
+        #crosshairSettings label { font-size: 13px; }
+        #crosshairSettings input, #crosshairSettings select {
+            width: 100%;
+            padding: 6px;
+            font-size: 13px;
+            color: #fff;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 6px;
+        }
+        #crosshairSettings select, #crosshairSettings option {
+            color: #fff;
+            background: rgba(30,30,30,0.9);
+            font-weight: bold;
+        }`;
+        this.utils.injectStyle(css);
     }
-    #toggleButton {
-        position: fixed;
-        top: 15px;
-        left: 15px;
-        background: linear-gradient(135deg, #ff416c, #ff4b2b);
-        color: #fff;
-        padding: 8px 14px;
-        font-size: 14px;
-        font-weight: bold;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        z-index: 9999;
-        box-shadow: 0 0 8px rgba(255,75,43,0.6);
-        transition: all 0.3s ease;
-    }
-    #toggleButton:hover { transform: scale(1.05); box-shadow: 0 0 12px rgba(255,75,43,0.9); }
-   #crosshairSettings {
-        position: fixed;
-        top: 60px;
-        right: 20px;
-        width: 240px;
-        background: rgba(20,20,20,0.6);
-        backdrop-filter: blur(10px);
-        color: #fff;
-        font-family: 'Segoe UI', sans-serif;
-        border-radius: 12px;
-        box-shadow: 0 0 12px rgba(0,0,0,0.4);
-        padding: 12px;
-        display: none;
-        transition: all 0.3s ease;
-        z-index: 9999;
-    }
-    #crosshairSettings label { display: block; margin-top: 8px; font-size: 13px; }
-    #crosshairSettings input, #crosshairSettings select { width: 100%; margin: 4px 0 10px; padding: 6px; font-size: 13px; color: #fff; background: rgba(255,255,255,0.1); border: none; border-radius: 6px; }
-    #crosshairSettings select, #crosshairSettings option { color: #fff; background: rgba(30,30,30,0.9); font-weight: bold; }`;
-    utils.injectStyle(crosshairCSS);
 
-    // Crosshair generators (kept same as original)
-    const crosshairTypes = {
+    // --- SHAPES ---
+    createCrosshairTypes() {
+        return {
         "None": (s, c) => ``,
         "Dot": (s, c) => `<div style="width:${s}px;height:${s}px;background:${c};border-radius:50%;"></div>`,
         "Cross": (s, c, t) => `
@@ -109,74 +108,88 @@ function CrosshairOverlay(utils, theme) {
             </div>`
     };
 
-    function createCrosshair(type, size, color, thickness, opacity) {
-        const container = utils.el('div', {
-            id: 'customCrosshair'
-        });
-        container.style.opacity = opacity;
-        const generator = crosshairTypes[type] || (() => '');
-        container.innerHTML = generator(size, color, thickness);
-        return container;
     }
 
-    function saveCrosshairSettings() {
-        const data = {
+    // --- CREATE ---
+    createCrosshair(type, size, color, thickness, opacity) {
+        const crosshair = this.utils.el('div', { id: 'customCrosshair' });
+        crosshair.style.opacity = opacity;
+        const generator = this.crosshairTypes[type] || (() => '');
+        crosshair.innerHTML = generator(size, color, thickness);
+        return crosshair;
+    }
+
+    // --- SETTINGS STORAGE ---
+    saveSettings() {
+        const settings = {
             type: document.getElementById('chType').value,
             size: document.getElementById('chSize').value,
             color: document.getElementById('chColor').value,
             thickness: document.getElementById('chThickness').value,
             opacity: document.getElementById('chOpacity').value
         };
-        utils.set(STORAGE_KEY, data);
+        this.utils.set(this.STORAGE_KEY, settings);
     }
 
-    function loadCrosshairSettings() {
-        return utils.get(STORAGE_KEY, null);
+    loadSettings() {
+        return this.utils.get(this.STORAGE_KEY, null);
     }
 
-    function createSettingsPanel() {
-        const panel = utils.el('div', {
-            id: 'crosshairSettings'
+    // --- SETTINGS PANEL ---
+createSettingsPanel() {
+    const panel = this.utils.el('div', { id: 'crosshairSettings' });
+    panel.innerHTML = `
+        <label>Type:</label>
+        <select id="chType">
+            ${Object.keys(this.crosshairTypes)
+                .map(t => `<option value="${t}">${t}</option>`)
+                .join('')}
+        </select>
+        <label>Size (px):</label>
+        <input id="chSize" type="number" value="30" min="5" max="200">
+        <label>Color:</label>
+        <input id="chColor" type="color" value="#ff0000">
+        <label>Thickness (px):</label>
+        <input id="chThickness" type="number" value="2" min="1" max="10">
+        <label>Opacity (0–1):</label>
+        <input id="chOpacity" type="number" value="1" step="0.1" min="0.1" max="1">
+    `;
+
+    // Attach live update listeners after the DOM elements exist
+    const inputs = panel.querySelectorAll('input, select');
+    inputs.forEach(el => {
+        el.addEventListener('input', () => {
+            this.updateCrosshair();
+            this.saveSettings();
         });
-        panel.innerHTML = `
-            <label>Type:</label>
-            <select id="chType">
-                ${Object.keys(crosshairTypes).map(t => `<option value="${t}">${t}</option>`).join('')}
-            </select>
-            <label>Size (px):</label>
-            <input id="chSize" type="number" value="30" min="5" max="200">
-            <label>Color:</label>
-            <input id="chColor" type="color" value="#ff0000">
-            <label>Thickness (px):</label>
-            <input id="chThickness" type="number" value="2" min="1" max="10">
-            <label>Opacity (0–1):</label>
-            <input id="chOpacity" type="number" value="1" step="0.1" min="0.1" max="1">
-        `;
-        // live update + save
-        panel.addEventListener('input', () => {
-            updateCrosshair();
-            saveCrosshairSettings();
+        el.addEventListener('change', () => {
+            this.updateCrosshair();
+            this.saveSettings();
         });
-        return panel;
-    }
+    });
+    this.loadSettings();
+    return panel;
+}
 
-    function updateCrosshair() {
-        const type = document.getElementById('chType').value;
-        const size = parseInt(document.getElementById('chSize').value, 10);
-        const color = document.getElementById('chColor').value;
-        const thickness = parseInt(document.getElementById('chThickness').value, 10);
-        const opacity = parseFloat(document.getElementById('chOpacity').value);
+
+    // --- UPDATE & INIT ---
+    updateCrosshair() {
+        const type = document.getElementById('chType')?.value || 'Dot';
+        const size = parseInt(document.getElementById('chSize')?.value || 30, 10);
+        const color = document.getElementById('chColor')?.value || '#ff0000';
+        const thickness = parseInt(document.getElementById('chThickness')?.value || 2, 10);
+        const opacity = parseFloat(document.getElementById('chOpacity')?.value || 1);
+
         const old = document.getElementById('customCrosshair');
         if (old) old.remove();
-        document.body.appendChild(createCrosshair(type, size, color, thickness, opacity));
+
+        const crosshair = this.createCrosshair(type, size, color, thickness, opacity);
+        document.body.appendChild(crosshair);
     }
 
-    // Initialize crosshair UI
-    const chPanel = createSettingsPanel();
-    document.body.appendChild(chPanel);
-    // Load saved settings
-    (function initCrosshairFromSaved() {
-        const saved = loadCrosshairSettings();
+    init() {
+        const saved = this.loadSettings();
+        console.log(saved);
         if (saved) {
             try {
                 document.getElementById('chType').value = saved.type;
@@ -184,10 +197,13 @@ function CrosshairOverlay(utils, theme) {
                 document.getElementById('chColor').value = saved.color;
                 document.getElementById('chThickness').value = saved.thickness;
                 document.getElementById('chOpacity').value = saved.opacity;
-            } catch {}
+            } catch (e) {
+                console.warn('CrosshairOverlay: failed to restore settings', e);
+            }
         }
-        updateCrosshair();
-    })();
+
+        this.updateCrosshair();
+    }
 }
 
 module.exports = { CrosshairOverlay };

@@ -85,8 +85,7 @@ utils.injectStyle(`
 
 StatsOverlay(utils, theme);
 KeysOverlay(utils, theme);
-CrosshairOverlay(utils, theme);
-GUI(utils, theme, themes, currentPreset);
+GUI(utils, theme, themes, currentPreset, CrosshairOverlay);
 
 
 let version = 'Unknown';
