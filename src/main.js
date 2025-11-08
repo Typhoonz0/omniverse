@@ -175,12 +175,7 @@ app.whenReady().then(() => {
 		},
 	);
 
-	if (adblock) {
-		ElectronBlocker.fromPrebuiltAdsAndTracking(fetch).then((blocker) => {
 
-			blocker.enableBlockingInSession(gameWindow.webContents.session);
-		});
-	}
 });
 
 app.on("window-all-closed", () => {

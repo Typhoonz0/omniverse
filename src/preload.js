@@ -1,195 +1,14 @@
 
-(function () {
-  if (window.__bodyAdditions) return; // already installed
-
-  // store originals
-  const _appendChild = Node.prototype.appendChild;
-  const _insertBefore = Node.prototype.insertBefore;
-  const _replaceChild = Node.prototype.replaceChild;
-  const _append = Element.prototype.append;
-  const _prepend = Element.prototype.prepend;
-  const _insertAdjacentHTML = Element.prototype.insertAdjacentHTML;
-  const _write = document.write.bind(document);
-  const _writeln = document.writeln ? document.writeln.bind(document) : null;
-  const descriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
-
-  // log store
-  window.__bodyAdditions = [];
-  window.__bodyAdditionsBlocked = false; // toggle to actually block insertions
-
-  function locatesPreload(stack) {
-    if (!stack) return false;
-    return /preload\.js\b/.test(stack); // adjust if your file name/path differs
-  }
-
-  function record(entry) {
-    window.__bodyAdditions.push(entry);
-    // optional console logging
-    console.groupCollapsed && console.groupCollapsed('[BODY ADD][preload.js]', entry.action, entry.target);
-    console.log(entry.content);
-    console.log(entry.stack);
-    console.groupEnd && console.groupEnd();
-    return entry;
-  }
-
-  // build an entry object
-  function makeEntry(action, target, content, stack) {
-    return {
-      time: Date.now(),
-      action,
-      target: target === document.body ? 'document.body' : (target && (target.tagName || target.nodeName)),
-      content: typeof content === 'string' ? content.slice(0,200) : (content && content.outerHTML ? content.outerHTML.slice(0,200) : String(content)),
-      stack,
-      callerScript: (document.currentScript && document.currentScript.src) || null
-    };
-  }
-
-  // wrapper helpers that only record when stack contains preload.js
-  function wrapInsert(original, action) {
-    return function (node) {
-      try {
-        const target = this;
-        const stack = (new Error()).stack || '';
-        const willAffectBody = (target === document.body) || (document.body && document.body.contains(target));
-        // only proceed if preload.js appears in stack and target is body (or inside body)
-        if (willAffectBody && locatesPreload(stack)) {
-          // mark node so MutationObserver can identify
-          try { if (node && node.nodeType === 1) node.__addedBy = 'preload.js'; } catch(_) {}
-          const entry = makeEntry(action, target, node, stack);
-          record(entry);
-          if (shouldBlock()) return node; // pretend success, don't append
-        }
-      } catch (e) { /* swallow */ }
-      return original.apply(this, arguments);
-    };
-  }
-
-  function shouldBlock() {
-    return !!window.__bodyAdditionsBlocked;
-  }
-
-  // Wrap appendChild/insertBefore/replaceChild
-  Node.prototype.appendChild = wrapInsert(_appendChild, 'appendChild');
-  Node.prototype.insertBefore = wrapInsert(_insertBefore, 'insertBefore');
-  Node.prototype.replaceChild = wrapInsert(_replaceChild, 'replaceChild');
-
-  // wrap append/prepend (accepts strings and nodes)
-  Element.prototype.append = wrapInsert(_append, 'append');
-  Element.prototype.prepend = wrapInsert(_prepend, 'prepend');
-
-  // wrap insertAdjacentHTML
-  Element.prototype.insertAdjacentHTML = function(position, text) {
-    try {
-      const stack = (new Error()).stack || '';
-      const willAffectBody = (this === document.body) || (document.body && document.body.contains(this));
-      if (willAffectBody && locatesPreload(stack)) {
-        // record the HTML snippet
-        const entry = makeEntry('insertAdjacentHTML(' + position + ')', this, text, stack);
-        record(entry);
-        if (shouldBlock()) return;
-      }
-    } catch (e) {}
-    return _insertAdjacentHTML.apply(this, arguments);
-  };
-
-  // wrap innerHTML setter (if configurable)
-  if (descriptor && descriptor.set) {
-    Object.defineProperty(Element.prototype, 'innerHTML', {
-      set: function (html) {
-        try {
-          const stack = (new Error()).stack || '';
-          const willAffectBody = (this === document.body) || (document.body && document.body.contains(this));
-          if (willAffectBody && locatesPreload(stack)) {
-            const entry = makeEntry('innerHTML_set', this, (typeof html === 'string' ? html : String(html)), stack);
-            record(entry);
-            if (shouldBlock()) return;
-          }
-        } catch (e) {}
-        return descriptor.set.apply(this, arguments);
-      },
-      get: descriptor.get,
-      configurable: true,
-      enumerable: descriptor.enumerable
+function blockAds() {
+  const observer = new MutationObserver(() => {
+    ['#banner-home', '#banner-home2', '#banner-respawn-1', '#banner-respawn-2'].forEach(selector => {
+      const ad = document.querySelector(selector);
+      if (ad) ad.style.display = 'none';
     });
-  }
-
-  // wrap document.write / writeln (affects document)
-  document.write = function (str) {
-    try {
-      const stack = (new Error()).stack || '';
-      if (locatesPreload(stack)) {
-        const entry = makeEntry('document.write', document, String(str), stack);
-        record(entry);
-        if (shouldBlock()) return;
-      }
-    } catch (e) {}
-    return _write(str);
-  };
-  if (_writeln) {
-    document.writeln = function (str) {
-      try {
-        const stack = (new Error()).stack || '';
-        if (locatesPreload(stack)) {
-          const entry = makeEntry('document.writeln', document, String(str), stack);
-          record(entry);
-          if (shouldBlock()) return;
-        }
-      } catch (e) {}
-      return _writeln(str);
-    };
-  }
-
-  // MutationObserver fallback: only report nodes marked by our wrappers (__addedBy === 'preload.js')
-  const mo = new MutationObserver(function (records) {
-    for (const r of records) {
-      if (r.type === 'childList') {
-        for (const n of r.addedNodes) {
-          try {
-            if (n && n.__addedBy === 'preload.js') {
-              const stack = (new Error()).stack || '';
-              const entry = makeEntry('mutation_added', r.target, n, stack);
-              record(entry);
-            }
-          } catch (e) {}
-        }
-      }
-    }
   });
-  // observe body (or documentElement if body not yet present)
-  const observeTarget = document.body || document.documentElement;
-  if (observeTarget) {
-    mo.observe(observeTarget, { childList: true, subtree: true });
-  } else {
-    // if body not present yet, observe documentElement later
-    document.addEventListener('readystatechange', function () {
-      const t = document.body || document.documentElement;
-      if (t) mo.observe(t, { childList: true, subtree: true });
-    });
-  }
 
-  // utilities for user
-  window.__bodyAdditionsFind = function (pred) {
-    return window.__bodyAdditions.filter(pred);
-  };
-  window.__bodyAdditionsClear = function () { window.__bodyAdditions.length = 0; };
-  window.__bodyAdditionsBlock = function (v) { window.__bodyAdditionsBlocked = !!v; };
-  window.__bodyAdditionsUndoLast = function () {
-    const last = window.__bodyAdditions.pop();
-    if (!last) return null;
-    const nodes = Array.from(document.body.querySelectorAll('*')).reverse();
-    for (const node of nodes) {
-      try {
-        if (node.outerHTML && last.content && node.outerHTML.indexOf(last.content.slice(0,50)) !== -1) {
-          node.remove();
-          return node;
-        }
-      } catch (e) {}
-    }
-    return null;
-  };
-
-  console.info('[body-monitor] installed. Recording only insertions where stack contains "preload.js". Check window.__bodyAdditions.');
-})();
+  observer.observe(document.body, { childList: true, subtree: true });
+}
 
 var rsfgSQ,
   guFiCE,
@@ -6828,20 +6647,7 @@ kpXzk4X(
     kpXzk4X((vdYMHp8 = 1.088), console[IYy_pY7(msPUhh[136])](IYy_pY7(750)))
   })
 )
-const RAJgql = [IYy_pY7(751), IYy_pY7(752), IYy_pY7(753)],
-  zqKYys = (rsfgSQ) => {
-    return RAJgql[IYy_pY7(754)]((guFiCE) => {
-      return rsfgSQ[IYy_pY7(msPUhh[149])](guFiCE)
-    })
-  },
-  v6CzK0 = window[IYy_pY7(msPUhh[181])]
-window[IYy_pY7(msPUhh[181])] = function (...rsfgSQ) {
-  if (rsfgSQ[msPUhh[0]] && zqKYys(rsfgSQ[msPUhh[0]][IYy_pY7(756)]())) {
-    console[IYy_pY7(757)](IYy_pY7(758), rsfgSQ[msPUhh[0]])
-    return new Promise(() => {})
-  }
-  return v6CzK0[IYy_pY7(msPUhh[158])](this, rsfgSQ)
-}
+
 function xn0zaM() {
   const rsfgSQ = performance[IYy_pY7(msPUhh[179])]()
   if (
@@ -7228,3 +7034,5 @@ window[IYy_pY7(msPUhh[163])](IYy_pY7(814), () => {
     [IYy_pY7(833)]: msPUhh[97],
   })
 })
+
+blockAds()
