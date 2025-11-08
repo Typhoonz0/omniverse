@@ -367,7 +367,7 @@ function GUI(utils, theme, themes, currentPreset, CrosshairOverlay) {
     let adblocker = settings.adblocker ?? false; // default false
 
     const adblockBtn = utils.el('button', {
-        text: `Adblocker (breaks skin swapper): ${adblocker ? 'ON' : 'OFF'}`
+        text: `Manual .webp swapper: ${adblocker ? 'ON' : 'OFF'}`
     });
     Object.assign(adblockBtn.style, {
         padding: '6px 12px',
@@ -384,7 +384,7 @@ function GUI(utils, theme, themes, currentPreset, CrosshairOverlay) {
         adblocker = !adblocker;
         settings.adblocker = adblocker;
         writeSettings(settings);
-        adblockBtn.textContent = `Adblocker (breaks skin swapper): ${adblocker ? 'ON' : 'OFF'}`;
+        adblockBtn.textContent = `Manual .webp swapper: ${adblocker ? 'ON' : 'OFF'}`;
         adblockBtn.style.background = adblocker ? theme.green1 : theme.red3;
     });
 

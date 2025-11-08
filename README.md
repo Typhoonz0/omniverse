@@ -5,11 +5,12 @@
 <p align="center">
 <b>A modern, easy to use Deadshot.io client.</b>
 
-<p align="center">
-  <img src="github/image.png">
-  <i>Preview of Omniverse 0.5</i>
-</p>
-
+<div align="center">
+  <img src="github/image.png" height="250">
+  <img src="github/matrix.png" height="250">
+  <br>
+  <i>Preview of Omniverse 0.7</i>  <i>Preview of Matrix Skins</i>
+</div>
 
 ## DO NOT DISTRIBUTE WITHOUT CREDIT
 ## Download:
@@ -25,13 +26,22 @@ npm start
 - [x] FPS Booster (literally triples your FPS)
 - [x] Keys Overlay - WASD C, R, Left/Right click 
 - [x] PC Stats - Just FPS + Ping or with Platform + CPU Cores
-- [x] Gun skin swapper <- Can either use ALL native skins or custom Webp
+- [x] Gun skin swapper <- Can either use ALL native skins or custom .webp
+- [x] Rainbow character
 - [x] Customizable UI
 - [x] Leaderboard scraper
 - [x] Auto Fullscreen
 - [x] Adblocker
 - [x] Discord RPC
 - [ ] Aimbot soon trust 
+
+## I have a white screen!
+This is an Electron issue, try these steps and **restart the client** each time until it works:
+- Connect to Internet
+- Close all Omniverse windows 
+- Restart your computer
+- Remove `C:/Users/name/AppData/Roaming/deadshot-viewer` or `/home/user/.config/deadshot-viewer`
+- Open an issue
 
 ## How to swap your guns:
 NEW: Turn Fun Mode on in settings, and choose your gun! Or follow the steps below for your custom .webp. <br>

@@ -123,7 +123,7 @@ const createWindow = () => {
 
 app.whenReady().then(() => {
 	const gameWindow = createWindow();
-
+	if (adblock) {
 	protocol.handle("custom", async (req) => {
 		const relativePath = req.url.slice(7);
 		const localPath = path.join(__dirname, "swap", relativePath);
@@ -174,7 +174,7 @@ app.whenReady().then(() => {
 			}
 		},
 	);
-
+	}
 
 });
 
