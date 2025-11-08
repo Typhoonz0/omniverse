@@ -475,6 +475,7 @@ function GUI(utils, theme, themes, currentPreset, CrosshairOverlay) {
 
     document.body.appendChild(gui);
 
+
     // --- Tabs container ---
     const tabs = utils.el('div');
     Object.assign(tabs.style, {
@@ -496,8 +497,8 @@ function GUI(utils, theme, themes, currentPreset, CrosshairOverlay) {
     const settingsTabBtn = utils.el('button', { text: 'Settings' });
     const themeTabBtn = utils.el('button', { text: 'Theme' });
     const crosshairTabBtn = utils.el('button', { text: 'Crosshair Editor' });
-
-    [mainTabBtn, settingsTabBtn, themeTabBtn, crosshairTabBtn].forEach(btn => {
+    const funTabBtn = utils.el('button', { text: 'Fun' });
+    [mainTabBtn, settingsTabBtn, themeTabBtn, crosshairTabBtn, funTabBtn].forEach(btn => {
         Object.assign(btn.style, {
             flex: 1,
             padding: '6px 12px',
@@ -543,6 +544,229 @@ function GUI(utils, theme, themes, currentPreset, CrosshairOverlay) {
     });
     createColorEditor(themeTabContainer, theme);
     gui.appendChild(themeTabContainer);
+    // --- Fun tab container ---
+    const funTabContainer = utils.el('div');
+    Object.assign(funTabContainer.style, {
+        display: 'none',
+        flexDirection: 'column',
+        gap: '8px',
+        padding: '8px',
+    });
+
+    // Create inner box for Fun tab content
+    const funBox = utils.el('div');
+    Object.assign(funBox.style, {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        padding: '10px',
+        borderRadius: '10px',
+        width: '100%',
+        boxSizing: 'border-box',
+    });
+
+    if (settings.rainbow) {
+        try {
+        window.toggleRainbow();
+        } catch {
+
+        }
+    }
+    // --- Rainbow toggle button ---
+    const rainbowBtn = utils.el('button', {
+        text: `Rainbow: ${settings.rainbow ? 'ON' : 'OFF'}`
+    });
+    Object.assign(rainbowBtn.style, {
+        padding: '6px 12px',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontWeight: 'bold',
+        background: settings.rainbow ? theme.blue1 : theme.red1,
+        color: theme.text1,
+    });
+
+    // --- Toggle logic ---
+    rainbowBtn.addEventListener('click', () => {
+        settings.rainbow = !settings.rainbow; // flip state
+        rainbowBtn.textContent = `Rainbow: ${settings.rainbow ? 'ON' : 'OFF'}`;
+        rainbowBtn.style.background = settings.rainbow ? theme.blue1 : theme.red1;
+            writeSettings(settings);
+            window.toggleRainbow();
+    });
+    // --- Rainbow toggle button ---
+    const funBtn = utils.el('button', {
+        text: `Fun Mode (This tab's content) (reload client): ${settings.funMode ? 'ON' : 'OFF'}`
+    });
+    Object.assign(funBtn.style, {
+        padding: '6px 12px',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontWeight: 'bold',
+        background: settings.funMode ? theme.blue1 : theme.red1,
+        color: theme.text1,
+    });
+
+    // --- Toggle logic ---
+    funBtn.addEventListener('click', () => {
+        settings.funMode = !settings.funMode; // flip state
+        funBtn.textContent = `Fun Mode (This tab's content): ${settings.funMode ? 'ON' : 'OFF'}`;
+        funBtn.style.background = settings.funMode ? theme.blue1 : theme.red1;
+            writeSettings(settings);
+    });
+
+    // Append button to funBox, then box to container
+    funBox.appendChild(funBtn);
+    funBox.appendChild(rainbowBtn);
+// --- SKIN PRESET WINDOW ---
+function openSkinPresetWindow() {
+    // Remove existing if open
+    const existing = document.getElementById('skinPresetWindow');
+    if (existing) existing.remove();
+
+    // Base window
+    const presetWindow = document.createElement('div');
+    presetWindow.id = 'skinPresetWindow';
+    Object.assign(presetWindow.style, {
+        position: 'absolute',
+        top: '50px',
+        right: '200px',
+        width: '240px',
+        padding: '10px',
+        background: '#222',
+        color: '#fff',
+        border: '1px solid #fff',
+        borderRadius: '8px',
+        zIndex: '9999',
+        boxShadow: '0 0 10px rgba(0,0,0,0.7)',
+        fontFamily: 'sans-serif',
+    });
+    document.body.appendChild(presetWindow);
+
+    const title = document.createElement('h4');
+    title.textContent = 'Skin Presets (only works when signed in, choose default to use custom webp swapper)';
+    Object.assign(title.style, { margin: '0 0 10px 0', fontSize: '1em', textAlign: 'center' });
+    presetWindow.appendChild(title);
+
+    // --- Available skins (even numbers only) ---
+    const skins = {
+        "384": "default", "385": "Default",
+        "386": "bacon", "387": "Bacon",
+        "388": "linen", "389": "Fresh Linen",
+        "390": "greencamo", "391": "Green Camo",
+        "392": "redcamo", "393": "Red Camo",
+        "394": "tiger", "395": "Tigris",
+        "396": "carbon", "397": "Carbon Fiber",
+        "398": "cherry", "399": "Blossom",
+        "400": "prism", "401": "Gem Stone",
+        "402": "splatter", "403": "Marble",
+        "404": "swirl", "405": "Swirl",
+        "406": "vapor", "407": "Vapor Wave",
+        "408": "astro", "409": "Astro",
+        "410": "payday", "411": "Pay Day",
+        "412": "safari", "413": "Safari",
+        "414": "snowcamo", "415": "Snow Camo",
+        "416": "rustic", "417": "Royal",
+        "418": "hydro", "419": "Hydrodip",
+        "420": "ice", "421": "Frostbite",
+        "422": "silly", "423": "Silly",
+        "424": "alez", "425": "Alez",
+        "426": "horizon", "427": "Horizon",
+        "428": "quackster", "429": "QuaK",
+        "430": "matrix", "431": "Matrix",
+        "432": "neon", "433": "Neon",
+        "434": "winter", "435": "Winter '22",
+        "436": "hlwn", "437": "HLWN '23",
+        "438": "summer", "439": "Summer '24",
+        "440": "birthday", "441": "1st Birthday",
+    };
+
+    const evenSkins = {};
+    for (const [key, value] of Object.entries(skins)) {
+        if (parseInt(key) % 2 === 0) {
+            evenSkins[key] = value;
+        }
+    }
+
+    // --- Load or default saved selection ---
+    const saved = JSON.parse(localStorage.getItem('aura_selectedSkins') || '{}');
+    const selected = Object.assign(
+        { ar: 'default', smg: 'default', shotgun: 'default', awp: 'default' },
+        saved
+    );
+
+    // --- Dropdown builder ---
+    function createDropdown(labelText, key) {
+        const wrapper = document.createElement('div');
+        wrapper.style.marginBottom = '8px';
+
+        const label = document.createElement('label');
+        label.textContent = labelText;
+        label.style.display = 'block';
+        label.style.marginBottom = '4px';
+        label.style.fontSize = '0.9em';
+
+        const select = document.createElement('select');
+        Object.assign(select.style, {
+            width: '100%',
+            padding: '4px',
+            borderRadius: '4px',
+            border: 'none',
+            background: '#333',
+            color: '#fff',
+        });
+
+        for (const val of Object.values(evenSkins)) {
+            const option = document.createElement('option');
+            option.value = val;
+            option.textContent = val.charAt(0).toUpperCase() + val.slice(1);
+            if (selected[key] === val) option.selected = true;
+            select.appendChild(option);
+        }
+
+        select.addEventListener('change', () => {
+            selected[key] = select.value;
+            localStorage.setItem('aura_selectedSkins', JSON.stringify(selected));
+        });
+
+        wrapper.appendChild(label);
+        wrapper.appendChild(select);
+        presetWindow.appendChild(wrapper);
+    }
+
+    createDropdown('AR Skin', 'ar');
+    createDropdown('SMG Skin', 'smg');
+    createDropdown('Shotgun Skin', 'shotgun');
+    createDropdown('AWP Skin', 'awp');
+
+    // --- Close button ---
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = 'Close';
+    Object.assign(closeBtn.style, {
+        marginTop: '10px',
+        padding: '4px 8px',
+        cursor: 'pointer',
+        width: '100%',
+    });
+    closeBtn.addEventListener('click', () => presetWindow.remove());
+    presetWindow.appendChild(closeBtn);
+}
+
+// --- Button to open ---
+const openSkinBtn = document.createElement('button');
+openSkinBtn.textContent = 'Open Skin Preset';
+Object.assign(openSkinBtn.style, {
+    marginBottom: '10px',
+    cursor: 'pointer',
+});
+openSkinBtn.addEventListener('click', openSkinPresetWindow);
+funBox.appendChild(openSkinBtn);
+
+    funTabContainer.appendChild(funBox);
+
+    // Later, append funTabContainer to gui (after mainGui and other tab containers)
+    gui.appendChild(funTabContainer);
 
     // --- Settings tab ---
     const settingsTabContainer = utils.el('div');
@@ -579,9 +803,9 @@ function GUI(utils, theme, themes, currentPreset, CrosshairOverlay) {
         settingsTabContainer.style.display = 'none';
         themeTabContainer.style.display = 'none';
         crosshairTabContainer.style.display = 'none';
-
+           funTabContainer.style.display = 'none'; // <-- new
         // Reset button styles
-        [mainTabBtn, settingsTabBtn, themeTabBtn, crosshairTabBtn].forEach(btn => {
+        [mainTabBtn, settingsTabBtn, themeTabBtn, crosshairTabBtn, funTabBtn].forEach(btn => {
             btn.style.background = theme.red1;
             btn.style.color = theme.text1;
         });
@@ -599,7 +823,10 @@ function GUI(utils, theme, themes, currentPreset, CrosshairOverlay) {
         } else if (tab === 'crosshair') {
             crosshairTabContainer.style.display = 'flex';
             crosshairTabBtn.style.background = theme.blue1;
-        }
+        }else if (tab === 'fun') { // <-- new
+        funTabContainer.style.display = 'flex';
+        funTabBtn.style.background = theme.blue1;
+    }
     }
 
     // Initial tab
@@ -610,7 +837,7 @@ function GUI(utils, theme, themes, currentPreset, CrosshairOverlay) {
     settingsTabBtn.addEventListener('click', () => showTab('settings'));
     themeTabBtn.addEventListener('click', () => showTab('theme'));
     crosshairTabBtn.addEventListener('click', () => showTab('crosshair'));
-
+    funTabBtn.addEventListener('click', () => showTab('fun'));
     // Hide old settings overlay if exists
     if (settingsBtn) settingsBtn.remove();
     if (settingsOverlay) settingsOverlay.style.display = 'none';

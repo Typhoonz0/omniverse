@@ -20,6 +20,7 @@ let gameWindow;
 let adblock;
 let rpc;
 let dir = __dirname;
+let funmode;
 while (!fs.existsSync(path.join(dir, 'omniverse')) && path.dirname(dir) !== dir)
 	dir = path.dirname(dir);
 
@@ -34,6 +35,9 @@ if (fs.existsSync(framerateConfigPath)) {
 
 		if (config.forceHighPerformanceGPU === true) {
 			app.commandLine.appendSwitch("force_high_performance_gpu");
+		}
+		if (config.funMode === true) {
+			funmode = true;
 		}
 
 		adblock = config.adblocker;
@@ -80,19 +84,25 @@ if (rpc) {
 }
 
 const createWindow = () => {
-	gameWindow = new BrowserWindow({
+
+	const windowOptions = {
 		show: true,
 		title: "Deadshot.io",
 		fullscreen: false,
-
 		webPreferences: {
 			nodeIntegration: true,
 			contextIsolation: false,
 			enableRemoteModule: true,
 			sandbox: false,
 		},
-	});
+	};
 
+	// Only add preload when funmode is true
+	if (funmode) {
+		windowOptions.webPreferences.preload = path.join(__dirname, 'preload.js');
+	}
+
+	const gameWindow = new BrowserWindow(windowOptions);
 	gameWindow.setMenuBarVisibility(false);
 	gameWindow.loadURL("https://deadshot.io");
 

@@ -25,7 +25,7 @@ npm start
 - [x] FPS Booster (literally triples your FPS)
 - [x] Keys Overlay - WASD C, R, Left/Right click 
 - [x] PC Stats - Just FPS + Ping or with Platform + CPU Cores
-- [x] Gun skin swapper
+- [x] Gun skin swapper <- Can either use ALL native skins or custom Webp
 - [x] Customizable UI
 - [x] Leaderboard scraper
 - [x] Auto Fullscreen
@@ -34,6 +34,7 @@ npm start
 - [ ] Aimbot soon trust 
 
 ## How to swap your guns:
+NEW: Turn Fun Mode on in settings, and choose your gun! Or follow the steps below for your custom .webp. <br>
 Replace the example images inside the `swap/` directory, and reload  the client. Make sure the names are EXACTLY the same as below.
 On Windows, this is probably in `<omniverse folder location>/resources/app/swap`
 ```

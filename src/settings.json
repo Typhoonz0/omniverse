@@ -3,5 +3,7 @@
   "forceHighPerformanceGPU": false,
   "adblocker": true,
   "rpc": false,
-  "toggleKey": "o"
+  "toggleKey": "o",
+  "rainbow": true,
+  "funMode": true
 }
