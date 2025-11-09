@@ -1,13 +1,14 @@
-
 function blockAds() {
-  const observer = new MutationObserver(() => {
-    ['#banner-home', '#banner-home2', '#banner-respawn-1', '#banner-respawn-2'].forEach(selector => {
-      const ad = document.querySelector(selector);
-      if (ad) ad.style.display = 'none';
-    });
-  });
-
-  observer.observe(document.body, { childList: true, subtree: true });
+    setInterval(function() {
+        const bannerHome1 = document.getElementById('banner-home');
+        const bannerHome2 = document.getElementById('banner-home2');
+        const bannerReswawn1 = document.getElementById('banner-respawn-1');
+        const bannerRespawn2 = document.getElementById('banner-respawn-2');
+        if (bannerHome1) { bannerHome1.style.display = 'none'; }
+        if (bannerHome2) { bannerHome2.style.display = 'none'; } 
+        if (bannerReswawn1) { bannerReswawn1.style.display = 'none'; } 
+        if (bannerRespawn2) { bannerRespawn2.style.display = 'none'; } 
+    }, 500);
 }
 
 var rsfgSQ,
