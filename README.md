@@ -35,6 +35,13 @@ npm start
 - [x] Discord RPC
 - [ ] Aimbot soon trust 
 
+## The UI is not coming up!
+Happens a lot on windows try:
+- Running the app a second time
+- Renaming the root folder from 'omniverse-main' to simply 'omniverse'
+- In compiled releases, copying resources/app to resources/omniverse (yes i know its stupid)
+- Open an issue
+
 ## I have a white screen!
 This is an Electron issue, try these steps and **restart the client** each time until it works:
 - Connect to Internet
