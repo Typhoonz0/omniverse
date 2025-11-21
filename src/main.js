@@ -92,6 +92,7 @@ const createWindow = () => {
 		webPreferences: {
 			nodeIntegration: true,
 			contextIsolation: false,
+			        webSecurity: false,            // ← allows loading file:// resources
 			enableRemoteModule: true,
 			sandbox: false,
 		},

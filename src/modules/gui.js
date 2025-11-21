@@ -466,7 +466,7 @@ function GUI(utils, theme, themes, currentPreset, CrosshairOverlay) {
         color: theme.text1,
         borderRadius: '10px',
         boxShadow: '0 0 20px rgba(0,0,0,0.5)',
-        zIndex: 100000,
+        zIndex: 100,
         display: 'flex',
         flexDirection: 'column',
         gap: '12px',
@@ -498,7 +498,9 @@ function GUI(utils, theme, themes, currentPreset, CrosshairOverlay) {
     const themeTabBtn = utils.el('button', { text: 'Theme' });
     const crosshairTabBtn = utils.el('button', { text: 'Crosshair Editor' });
     const funTabBtn = utils.el('button', { text: 'Fun' });
-    [mainTabBtn, settingsTabBtn, themeTabBtn, crosshairTabBtn, funTabBtn].forEach(btn => {
+    const bindsTabBtn = utils.el('button', { text: 'GIF' });
+
+    [mainTabBtn, settingsTabBtn, themeTabBtn, crosshairTabBtn, funTabBtn, bindsTabBtn].forEach(btn => {
         Object.assign(btn.style, {
             flex: 1,
             padding: '6px 12px',
@@ -619,6 +621,125 @@ function GUI(utils, theme, themes, currentPreset, CrosshairOverlay) {
     // Append button to funBox, then box to container
     funBox.appendChild(funBtn);
     funBox.appendChild(rainbowBtn);
+
+
+Object.assign(bindsTabBtn.style, {
+    flex: 1,
+    padding: '6px 12px',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    color: theme.red1,
+});
+
+tabs.appendChild(bindsTabBtn);
+const bindsTabContainer = utils.el('div');
+Object.assign(bindsTabContainer.style, {
+    display: 'none',
+    flexDirection: 'column',
+    gap: '12px',
+    padding: '8px',
+    zIndex: 100000
+});
+gui.appendChild(bindsTabContainer);
+
+
+
+// --- create GIF ---
+const img = document.createElement("img");
+img.src = `${base}/anime.gif`; // your base path variable
+img.style.position = "absolute";
+img.style.left = "200px";
+img.style.top = "200px";
+img.style.cursor = "grab";
+img.style.zIndex = "999999";
+document.body.appendChild(img);
+
+// --- make draggable helper ---
+utils.makeDraggable(img);
+
+// --- apply initial scale and visibility ---
+function applyGifScale() {
+    img.style.width = `${img.naturalWidth * settings.animeGifScale}px`;
+    img.style.height = `${img.naturalHeight * settings.animeGifScale}px`;
+    img.style.display = settings.showAnimeGif ? "block" : "none";
+}
+img.onload = applyGifScale;
+const gifNote = utils.el('div', {
+    text: 'Change this by swapping out /resources/app/src/anime.gif'
+});
+Object.assign(gifNote.style, {
+    padding: '6px 12px',
+    borderRadius: '6px',
+    background: theme.bgLight,
+    color: theme.text1,
+    fontSize: '12px',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: '8px'
+});
+
+bindsTabContainer.appendChild(gifNote);
+// --- toggle GIF visibility button ---
+const toggleGifBtn = utils.el('button', {
+    text: `Anime GIF: ${settings.showAnimeGif ? 'ON' : 'OFF'}`
+});
+Object.assign(toggleGifBtn.style, {
+    padding: '6px 12px',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    background: settings.showAnimeGif ? theme.blue1 : theme.red1,
+    color: theme.text1,
+});
+toggleGifBtn.addEventListener('click', () => {
+    settings.showAnimeGif = !settings.showAnimeGif;
+    toggleGifBtn.textContent = `Anime GIF: ${settings.showAnimeGif ? 'ON' : 'OFF'}`;
+    toggleGifBtn.style.background = settings.showAnimeGif ? theme.blue1 : theme.red1;
+    applyGifScale();
+    writeSettings(settings);
+});
+bindsTabContainer.appendChild(toggleGifBtn);
+
+// --- cycle size button ---
+const sizeBtn = utils.el('button', {
+    text: 'Size: Medium'
+});
+Object.assign(sizeBtn.style, {
+    padding: '6px 12px',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    background: theme.bgLight,
+    color: theme.text1,
+});
+
+// possible states
+const sizes = [
+    { name: 'Small', scale: 0.25 },
+    { name: 'Medium', scale: 0.5 },
+    { name: 'Large', scale: 1 }
+];
+
+// set initial button text based on current scale
+let currentIndex = sizes.findIndex(s => s.scale === settings.animeGifScale);
+if (currentIndex === -1) currentIndex = 1; // default to Medium
+sizeBtn.textContent = `Size: ${sizes[currentIndex].name}`;
+
+sizeBtn.addEventListener('click', () => {
+    currentIndex = (currentIndex + 1) % sizes.length;
+    const size = sizes[currentIndex];
+    settings.animeGifScale = size.scale;
+    sizeBtn.textContent = `Size: ${size.name}`;
+    applyGifScale();
+    writeSettings(settings);
+});
+
+bindsTabContainer.appendChild(sizeBtn);
+
 // --- SKIN PRESET WINDOW ---
 function openSkinPresetWindow() {
     // Remove existing if open
@@ -805,7 +926,7 @@ funBox.appendChild(openSkinBtn);
         crosshairTabContainer.style.display = 'none';
            funTabContainer.style.display = 'none'; // <-- new
         // Reset button styles
-        [mainTabBtn, settingsTabBtn, themeTabBtn, crosshairTabBtn, funTabBtn].forEach(btn => {
+        [mainTabBtn, settingsTabBtn, themeTabBtn, crosshairTabBtn, funTabBtn, bindsTabBtn].forEach(btn => {
             btn.style.background = theme.red1;
             btn.style.color = theme.text1;
         });
@@ -827,6 +948,10 @@ funBox.appendChild(openSkinBtn);
         funTabContainer.style.display = 'flex';
         funTabBtn.style.background = theme.blue1;
     }
+            else if (tab === 'keybind') { // <-- new
+        bindsTabContainer.style.display = 'flex';
+        bindsTabBtn.style.background = theme.blue1;
+    }
     }
 
     // Initial tab
@@ -838,6 +963,7 @@ funBox.appendChild(openSkinBtn);
     themeTabBtn.addEventListener('click', () => showTab('theme'));
     crosshairTabBtn.addEventListener('click', () => showTab('crosshair'));
     funTabBtn.addEventListener('click', () => showTab('fun'));
+    bindsTabBtn.addEventListener('click', () => showTab('keybind'));
     // Hide old settings overlay if exists
     if (settingsBtn) settingsBtn.remove();
     if (settingsOverlay) settingsOverlay.style.display = 'none';

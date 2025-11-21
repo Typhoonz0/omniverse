@@ -5,5 +5,8 @@
   "rpc": false,
   "toggleKey": "o",
   "rainbow": true,
-  "funMode": true
+  "funMode": true,
+  "showAnimeGif": true,
+  "animeGifSize": 100,
+  "animeGifScale": 0.5
 }
