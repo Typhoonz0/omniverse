@@ -52,8 +52,10 @@ This is an Electron issue, try these steps and **restart the client** each time 
 
 ## How to swap your guns:
 NEW: Turn Fun Mode on in settings, and choose your gun! Or follow the steps below for your custom .webp. <br>
+
 Replace the example images inside the `swap/` directory, and reload  the client. Make sure the names are EXACTLY the same as below.
-On Windows, this is probably in `<omniverse folder location>/resources/app/swap`
+
+On Windows, this is probably in `<omniverse folder location>/resources/app/swap` or `<omniverse folder location>/resources/omniverse/swap`
 ```
 swap/
 └── weapons
@@ -66,4 +68,5 @@ swap/
     └── vector
         └── vectorcomp.webp
 ```
+
 
