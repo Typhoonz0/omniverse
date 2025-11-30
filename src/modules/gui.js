@@ -925,6 +925,7 @@ funBox.appendChild(openSkinBtn);
         themeTabContainer.style.display = 'none';
         crosshairTabContainer.style.display = 'none';
            funTabContainer.style.display = 'none'; // <-- new
+          bindsTabContainer.style.display = 'none'; // <-- new
         // Reset button styles
         [mainTabBtn, settingsTabBtn, themeTabBtn, crosshairTabBtn, funTabBtn, bindsTabBtn].forEach(btn => {
             btn.style.background = theme.red1;
@@ -1249,5 +1250,6 @@ funBox.appendChild(openSkinBtn);
     footer.style.textAlign = 'center';
     gui.appendChild(footer);
 }
+
 
 module.exports = { GUI }
