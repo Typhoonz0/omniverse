@@ -7,9 +7,8 @@
 
 <div align="center">
   <img src="github/image.png" height="250">
-  <img src="github/matrix.png" height="250">
   <br>
-  <i>Preview of Omniverse 0.7</i>  <i>Preview of Matrix Skins</i>
+  <i>Preview of Omniverse 0.75</i> 
 </div>
 
 ## DO NOT DISTRIBUTE WITHOUT CREDIT
@@ -26,7 +25,7 @@ npm start
 - [x] FPS Booster (literally triples your FPS)
 - [x] Keys Overlay - WASD C, R, Left/Right click 
 - [x] PC Stats - Just FPS + Ping or with Platform + CPU Cores
-- [x] Gun skin swapper <- Can either use ALL native skins or custom .webp
+- [x] Gun skin swapper 
 - [x] Rainbow character
 - [x] Customizable UI
 - [x] Leaderboard scraper
@@ -51,7 +50,6 @@ This is an Electron issue, try these steps and **restart the client** each time 
 - Open an issue
 
 ## How to swap your guns:
-NEW: Turn Fun Mode on in settings, and choose your gun! Or follow the steps below for your custom .webp. <br>
 
 Replace the example images inside the `swap/` directory, and reload  the client. Make sure the names are EXACTLY the same as below.
 

@@ -1,1255 +1,464 @@
-function GUI(utils, theme, themes, currentPreset, CrosshairOverlay) {
+function GUI(utils) {
+	const fs = require('fs');
+	const path = require('path');
+
+	function findFolder(startDir, folderName) {
+		let dir = startDir;
+		while (!fs.existsSync(path.join(dir, folderName)) && path.dirname(dir) !== dir) {
+			dir = path.dirname(dir);
+		}
+		if (fs.existsSync(path.join(dir, folderName))) return path.join(dir, folderName);
+		return null;
+	}
+
+	let dir = __dirname;
+	console.log(__dirname);
+	let omniversePath = findFolder(dir, 'omniverse');
+	let base;
+	if (!omniversePath) {
+		omniversePath = findFolder(dir, 'app');
+	}
+	if (!omniversePath) {
+		omniversePath = findFolder(dir, 'src');
+		base = omniversePath;
+	}
+
+
+	if (!omniversePath) {
+		console.error('Neither "omniverse" nor "app" was found!');
+	} else {
+		console.log('Using folder:', omniversePath);
+	}
+
+	console.log('Using folder:', omniversePath);
+	if (omniversePath !== base) {
+		base = path.join(omniversePath, 'src');
+	}
+
+	const _utils = {
+		el: (tag, opts = {}) => {
+			const e = document.createElement(tag);
+			if (opts.text) e.textContent = opts.text;
+			if (opts.html) e.innerHTML = opts.html;
+			if (opts.cls) e.className = opts.cls;
+			if (opts.attrs) for (const k in opts.attrs) e.setAttribute(k, opts.attrs[k]);
+			if (opts.style) Object.assign(e.style, opts.style);
+			if (opts.listeners) for (const [k, v] of Object.entries(opts.listeners)) e.addEventListener(k, v);
+			return e;
+		},
+		injectStyle: (css) => { const s = document.createElement('style'); s.textContent = css; document.head.appendChild(s); },
+		get: (k, fallback) => { try { if (typeof window !== 'undefined' && window.localStorage) { const raw = localStorage.getItem('ov:' + k); if (raw === null) return fallback; return JSON.parse(raw); } } catch (e) { } return fallback; },
+		set: (k, v) => { try { if (typeof window !== 'undefined' && window.localStorage) localStorage.setItem('ov:' + k, JSON.stringify(v)); } catch (e) { } },
+		setRaw: (key, value) => {
+			try {
+				localStorage.setItem(key, value);
+			} catch { }
+		},
+		getRaw: (key, defaultVal = null) => {
+			try {
+				const raw = localStorage.getItem(key);
+				return raw === null ? defaultVal : raw;
+			} catch {
+				return defaultVal;
+			}
+		},
+    makeDraggable(targetEl, opts = {}) {
+        // opts: storageKey (string) - key to save pos, handle (Element) - optional handle element to start drag,
+        // onSave: callback(pos) optional
+        let dragging = false;
+        let offsetX = 0;
+        let offsetY = 0;
+        const handle = opts.handle || targetEl;
+        const storageKey = opts.storageKey || targetEl.id || null;
+        const onSave = opts.onSave || (() => {});
+
+        function start(e) {
+            // only left mouse button or touch
+            if ((e.type === 'mousedown' && e.button !== 0) && e.type !== 'touchstart') return;
+            dragging = true;
+            const rect = targetEl.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            offsetX = clientX - rect.left;
+            offsetY = clientY - rect.top;
+            e.preventDefault();
+        }
+
+        function move(e) {
+            if (!dragging) return;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            targetEl.style.left = (clientX - offsetX) + 'px';
+            targetEl.style.top = (clientY - offsetY) + 'px';
+            targetEl.style.right = 'auto';
+        }
+
+        function end() {
+            if (!dragging) return;
+            dragging = false;
+            if (storageKey) {
+                utils.savePosition(storageKey, targetEl.offsetLeft, targetEl.offsetTop);
+                onSave({
+                    x: targetEl.offsetLeft,
+                    y: targetEl.offsetTop
+                });
+            }
+        }
+
+        handle.addEventListener('mousedown', start);
+        handle.addEventListener('touchstart', start, {
+            passive: false
+        });
+        window.addEventListener('mousemove', move);
+        window.addEventListener('touchmove', move, {
+            passive: false
+        });
+        window.addEventListener('mouseup', end);
+        window.addEventListener('touchend', end);
+
+        // restore pos if any
+        if (storageKey) {
+            const pos = utils.loadPosition(storageKey);
+            if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
+                try {
+                    targetEl.style.left = pos.x + 'px';
+                    targetEl.style.top = pos.y + 'px';
+                    targetEl.style.right = 'auto';
+                } catch {}
+            }
+        }
+
+        return {
+            destroy() {
+                handle.removeEventListener('mousedown', start);
+                handle.removeEventListener('touchstart', start);
+                window.removeEventListener('mousemove', move);
+                window.removeEventListener('touchmove', move);
+                window.removeEventListener('mouseup', end);
+                window.removeEventListener('touchend', end);
+            }
+        };
+    },
+	}
+	const U = Object.assign({}, _utils, utils || {});
+	// --- Dragging for GUI ---
+	function makeDraggable(el) { let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0; const hdr = el.querySelector('header'); if (!hdr) return; hdr.style.cursor = 'grab'; hdr.addEventListener('pointerdown', e => { dragging = true; hdr.setPointerCapture(e.pointerId); sx = e.clientX; sy = e.clientY; const r = el.getBoundingClientRect(); ox = r.left; oy = r.top; hdr.style.cursor = 'grabbing'; }); window.addEventListener('pointermove', e => { if (!dragging) return; el.style.left = (ox + (e.clientX - sx)) + 'px'; el.style.top = (oy + (e.clientY - sy)) + 'px'; }); window.addEventListener('pointerup', e => { if (!dragging) return; dragging = false; try { hdr.releasePointerCapture(e.pointerId); } catch (e) { } hdr.style.cursor = 'grab'; }); }
+
+	const settingsPath = path.join(omniversePath, 'src', "settings.json");
+
+	function readSettings() {
+		try {
+			if (!fs.existsSync(settingsPath)) return {};
+			return JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+		} catch {
+			return {};
+		}
+	}
+
+	function writeSettings(obj) {
+		try {
+			fs.writeFileSync(settingsPath, JSON.stringify(obj, null, 2), 'utf-8');
+		} catch (err) {
+			console.error('Error writing settings:', err);
+		}
+	}
+	// --- default settings derived from oldgui ---
+	const DEFAULTS = {
+		"toggleKey": "o",
+		"showOverlay": true,
+		"showStats": true,
+		"crossEnable": true,
+		"crossColor": "#ff0000",
+		"crossSize": 30,
+		"crossThickness": 4,
+		"crossType": "CircleWithDot",
+		"showAnimeGif": true,
+		"animeGifPath": "",
+		"animeGifScale": 0.2,
+		"theme": "default",
+		"themeData": {
+			"accent": "#8da4ff",
+			"bgOpacity": 0.6
+		},
+		"funMode": false,
+		"rainbow": false,
+		"disableFrameRateLimit": false,
+		"forceHighPerformanceGPU": false,
+		"adblocker": false,
+		"rpc": false,
+		"animeGifSize": 100
+	}
+
+	// load and merge
+	let settings = Object.assign({}, DEFAULTS, readSettings());
+
+
+
+	// --- CSS (modernized but flexible) ---
+	const css = `
+  :root{--ov-accent: ${settings.themeData?.accent || '#8da4ff'}; --ov-bg: rgba(12,12,12,${settings.themeData?.bgOpacity || 0.6}); --ov-panel: rgba(0,0,0,0.45); --ov-text:#ebf0ff}
+  #ovGui{position:fixed;left:24px;top:24px;width:340px;border-radius:12px;border:2px solid var(--ov-accent);background:var(--ov-bg);color:var(--ov-text);z-index:999999;display:flex;flex-direction:column;box-shadow:0 16px 40px rgba(0,0,0,0.6)}
+  #ovGui header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--ov-panel);border-top-left-radius:10px;border-top-right-radius:10px;cursor:grab}
+  #ovGui .wrap{display:flex}
+  #ovGui .tabs{width:130px;background:var(--ov-panel);display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,0.03)}
+  #ovGui .tab{padding:8px 10px;cursor:pointer;color:#cfd7ff;border-left:3px solid transparent}
+  #ovGui .tab.active{background:transparent;color:#fff;border-left:3px solid var(--ov-accent)}
+  #ovGui .content{flex:1;padding:12px;display:flex;flex-direction:column;gap:8px;max-height:540px;overflow:auto}
+  .ov-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .ov-row label{flex:1}
+  .ov-btn{padding:6px 8px;border-radius:6px;border:none;background:var(--ov-accent);color:#031133;cursor:pointer}
+  .ov-input{padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--ov-text)}
+  .ov-select{padding:6px;border-radius:6px}
+  .ov-toggle{width:44px;height:22px;border-radius:22px;background:rgba(255,255,255,0.12);position:relative;cursor:pointer}
+  .ov-toggle .knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform 0.18s}
+  `;
+	U.injectStyle(css);
+
+	// --- Crosshair templates (full set) ---
+	const CROSSHAIR_TEMPLATES = {
+		None: (s, c, t) => ``,
+		Dot: (s, c) => `<div style="width:${s}px;height:${s}px;background:${c};border-radius:50%"></div>`,
+		Cross: (s, c, t) => `<div style="position:relative;width:${s}px;height:${s}px">
+      <div style="position:absolute;left:50%;top:0;transform:translateX(-50%);width:${t}px;height:100%;background:${c}"></div>
+      <div style="position:absolute;top:50%;left:0;transform:translateY(-50%);height:${t}px;width:100%;background:${c}"></div>
+    </div>`,
+		Circle: (s, c, t) => `<div style="width:${s}px;height:${s}px;border-radius:50%;border:${t}px solid ${c};box-sizing:border-box"></div>`,
+		CircleWithDot: (s, c, t) => `
+            <div style="position:relative;width:${s}px;height:${s}px;border:${t}px solid ${c};border-radius:50%;">
+                <div style="position:absolute;top:50%;left:50%;width:${s / 5}px;height:${s / 5}px;background:${c};border-radius:50%;transform:translate(-50%,-50%);"></div>
+            </div>`
+	};
+
+	// --- Build GUI skeleton ---
+	const gui = U.el('div', { attrs: { id: 'ovGui' } });
+	const header = U.el('header'); header.innerHTML = `<div style="font-weight:700">Omniverse | xliam.space</div><div style="opacity:0.9">Toggle: <span id="ov-toggle-key">${settings.toggleKey}</span></div>`;
+	gui.appendChild(header);
+
+	const wrap = U.el('div', { cls: 'wrap' });
+	const tabsEl = U.el('div', { cls: 'tabs' });
+	const contentEl = U.el('div', { cls: 'content' });
+	wrap.appendChild(tabsEl); wrap.appendChild(contentEl); gui.appendChild(wrap);
+
+	// tabs list - mirrors oldgui features 
+	const TABS = [
+		{ id: 'main', label: 'Main' }, { id: 'keys', label: 'Keys' }, { id: 'cross', label: 'Crosshair' }, { id: 'gif', label: 'GIF' }, { id: 'theme', label: 'Theme' }, { id: 'settings', label: 'Settings' }, { id: 'debug', label: 'Debug' }
+	];
+	let activeTab = 'main';
+
+	function createTabs() { tabsEl.innerHTML = ''; TABS.forEach(t => { const b = U.el('div', { cls: 'tab', text: t.label, listeners: { click: () => { setActiveTab(t.id); } } }); b.dataset.tabId = t.id; if (t.id === activeTab) b.classList.add('active'); tabsEl.appendChild(b); }); }
+	function setActiveTab(id) { activeTab = id; Array.from(tabsEl.children).forEach(c => c.classList.toggle('active', c.dataset.tabId === id)); renderContent(); }
+
+	// small UI helpers
+	function rowLabel(text) { const r = U.el('div', { cls: 'ov-row' }); const l = U.el('label', { text }); l.style.fontSize = '13px'; r.appendChild(l); return { row: r, label: l }; }
+	function makeToggle(state, onChange) { const t = U.el('div', { cls: 'ov-toggle' }); const k = U.el('div', { cls: 'knob' }); t.appendChild(k); t.dataset.on = state ? 1 : 0; if (state) k.style.transform = 'translateX(22px)'; t.addEventListener('click', () => { const now = t.dataset.on === '1' ? false : true; t.dataset.on = now ? 1 : 0; k.style.transform = now ? 'translateX(22px)' : ''; onChange(now); }); return t; }
+
+
+	// render per-tab content
+	function renderContent() {
+		contentEl.innerHTML = '';
+		if (activeTab === 'main') {
+			contentEl.appendChild(U.el('div', { html: '<strong>Quick Controls</strong>' }));
+			const { row: r1 } = rowLabel('Show Keys Overlay'); const t1 = makeToggle(settings.showOverlay, v => { settings.showOverlay = v; save(); updateOverlay("keyDisplayOverlay"); }); r1.appendChild(t1); contentEl.appendChild(r1);
+			const { row: r2 } = rowLabel('Resource Swapper (Reload Client)'); const t2 = makeToggle(settings.adblocker, v => { settings.adblocker = v; save(); }); r2.appendChild(t2); contentEl.appendChild(r2);
+		}
+
+		if (activeTab === 'keys') {
+			const { row: r2 } = rowLabel('Show Stats Overlay'); const t2 = makeToggle(settings.showStats, v => { settings.showStats = v; save(); updateOverlay("dsOverlayStats"); }); r2.appendChild(t2); contentEl.appendChild(r2);
+			[
+				{ label: "Show Date", key: "showDate" },
+				{ label: "Show Time", key: "showTime" },
+				{ label: "Show OS", key: "showOS" },
+				{ label: "Show CPU", key: "showCPU" },
+				{ label: "Show Server", key: "showServer" },
+				{ label: "Show Sens", key: "showSens" },
+				{ label: "Show FPS", key: "showFPS" },
+				{ label: "Show Ping", key: "showPing" }
+			].forEach(opt => {
+				const { row } = rowLabel(opt.label);
+				const toggle = makeToggle(U.getRaw(opt.key) !== "false", v => {
+					U.setRaw(opt.key, v);
+				});
+				row.appendChild(toggle);
+				contentEl.appendChild(row);
+			});
+		}
+
+		if (activeTab === 'cross') {
+			contentEl.appendChild(U.el('div', { html: '<strong>Crosshair Editor</strong>' }));
+			const enRow = U.el('div', { cls: 'ov-row' }); enRow.appendChild(U.el('label', { text: 'Enable' })); enRow.appendChild(makeToggle(settings.crossEnable, v => { settings.crossEnable = v; save(); updateCrosshair(); })); contentEl.appendChild(enRow);
+			const colorRow = U.el('div', { cls: 'ov-row' }); colorRow.appendChild(U.el('label', { text: 'Color' })); const colorInput = U.el('input', { attrs: { type: 'color', value: settings.crossColor } }); colorInput.addEventListener('input', e => { settings.crossColor = e.target.value; save(); updateCrosshair(); }); colorRow.appendChild(colorInput); contentEl.appendChild(colorRow);
+			const sizeRow = U.el('div', { cls: 'ov-row' }); sizeRow.appendChild(U.el('label', { text: 'Size' })); const sizeInp = U.el('input', { attrs: { type: 'range', min: 4, max: 300, value: settings.crossSize } }); sizeInp.addEventListener('input', e => { settings.crossSize = Number(e.target.value); save(); updateCrosshair(); }); sizeRow.appendChild(sizeInp); contentEl.appendChild(sizeRow);
+			const thickRow = U.el('div', { cls: 'ov-row' }); thickRow.appendChild(U.el('label', { text: 'Thickness' })); const tInp = U.el('input', { attrs: { type: 'range', min: 1, max: 28, value: settings.crossThickness } }); tInp.addEventListener('input', e => { settings.crossThickness = Number(e.target.value); save(); updateCrosshair(); }); thickRow.appendChild(tInp); contentEl.appendChild(thickRow);
+			const typeRow = U.el('div', { cls: 'ov-row' }); typeRow.appendChild(U.el('label', { text: 'Type' })); const sel = U.el('select', { cls: 'ov-select' }); Object.keys(CROSSHAIR_TEMPLATES).forEach(k => { const o = U.el('option', { text: k }); o.value = k; if (settings.crossType === k) o.selected = true; sel.appendChild(o); }); sel.addEventListener('change', e => { settings.crossType = e.target.value; save(); updateCrosshair(); }); typeRow.appendChild(sel); contentEl.appendChild(typeRow);
+			contentEl.appendChild(U.el('div', { html: '<em>Preview</em>' })); updateCrosshair();
+		}
+
+		if (activeTab === 'gif') {
+			contentEl.appendChild(U.el('div', { html: '<strong>GIF Overlay</strong>' }));
+			const sRow = U.el('div', { cls: 'ov-row' }); sRow.appendChild(U.el('label', { text: 'Enable' })); sRow.appendChild(makeToggle(settings.showAnimeGif, v => { settings.showAnimeGif = v; save(); updateGif(); })); contentEl.appendChild(sRow);
+			const pathRow = U.el('div', { cls: 'ov-row' }); pathRow.appendChild(U.el('label', { text: 'GIF Path / URL' })); const pathInp = U.el('input', { cls: 'ov-input', attrs: { type: 'text', value: settings.animeGifPath || '' } }); pathInp.addEventListener('change', e => { settings.animeGifPath = e.target.value; save(); updateGif(); }); pathRow.appendChild(pathInp); contentEl.appendChild(pathRow);
+			const scaleRow = U.el('div', { cls: 'ov-row' }); scaleRow.appendChild(U.el('label', { text: 'Scale' })); const scaleRange = U.el('input', { attrs: { type: 'range', min: 0.1, max: 2, step: 0.05, value: settings.animeGifScale || 0.6 } }); scaleRange.addEventListener('input', e => { settings.animeGifScale = Number(e.target.value); save(); updateGif(); }); scaleRow.appendChild(scaleRange); contentEl.appendChild(scaleRow);
+			contentEl.appendChild(U.el('div', { html: '<em>Local file paths work in desktop runs; otherwise provide a URL.</em>' }));
+		}
+
+		if (activeTab === 'theme') {
+			contentEl.appendChild(U.el('div', { html: '<strong>Theme Editor</strong>' }));
+			const accRow = U.el('div', { cls: 'ov-row' }); accRow.appendChild(U.el('label', { text: 'Accent Color' })); const accInp = U.el('input', { attrs: { type: 'color', value: settings.themeData?.accent || '#8da4ff' } }); accInp.addEventListener('input', e => { settings.themeData = settings.themeData || {}; settings.themeData.accent = e.target.value; applyTheme(settings.themeData); save(); }); accRow.appendChild(accInp); contentEl.appendChild(accRow);
+			const bgRow = U.el('div', { cls: 'ov-row' }); bgRow.appendChild(U.el('label', { text: 'Background Opacity' })); const bgInp = U.el('input', { attrs: { type: 'range', min: 0.15, max: 1, step: 0.05, value: settings.themeData?.bgOpacity || 0.6 } }); bgInp.addEventListener('input', e => { settings.themeData = settings.themeData || {}; settings.themeData.bgOpacity = Number(e.target.value); applyTheme(settings.themeData); save(); }); bgRow.appendChild(bgInp); contentEl.appendChild(bgRow);
+		}
+
+		if (activeTab === 'settings') {
+			contentEl.appendChild(U.el('div', { html: '<strong>Settings & Hotkeys</strong>' }));
+
+			const kb = U.el('div', {
+				cls: 'ov-row',
+				style: { display: 'flex', flexDirection: 'column', gap: '4px' }
+			});
+
+			kb.appendChild(U.el('label', { text: 'Toggle Key' }));
+
+			const i = U.el('input', {
+				cls: 'ov-input',
+				attrs: { type: 'text', value: settings.toggleKey || '' }
+			});
+
+			i.onchange = e => {
+				settings.toggleKey = e.target.value.trim();
+				document.getElementById('ov-toggle-key').textContent = settings.toggleKey;
+				save();
+			};
+
+			kb.appendChild(i);
+			contentEl.appendChild(kb);
+
+			const r = U.el('div', { style: { display: 'flex', gap: '8px' } });
+
+			r.appendChild(U.el('button', {
+				text: 'Save',
+				cls: 'ov-btn',
+				listeners: { click: () => { save(true); alert('Settings saved'); } }
+			}));
+
+			r.appendChild(U.el('button', {
+				text: 'Reset',
+				cls: 'ov-btn',
+				listeners: {
+					click: () => {
+						if (confirm('Reset to defaults?')) {
+							settings = Object.assign({}, DEFAULTS);
+							save(true);
+							renderContent();
+							updateCrosshair();
+							updateOverlay();
+							updateGif();
+						}
+					}
+				}
+			}));
+
+			contentEl.appendChild(r);
+		}
+
+		if (activeTab === 'debug') {
+			contentEl.appendChild(U.el('div', { html: '<strong>Debug</strong>' }));
+			const dump = U.el('button', { text: 'Show State', cls: 'ov-btn', listeners: { click: () => alert(JSON.stringify(settings, null, 2)) } });
+			contentEl.appendChild(dump);
+		}
+	}
+
+	
+	function applyTheme(td) { if (!td) return; if (td.accent) document.documentElement.style.setProperty('--ov-accent', td.accent); if (td.bgOpacity !== undefined) document.documentElement.style.setProperty('--ov-bg', `rgba(12,12,12,${td.bgOpacity})`); }
+	if (settings.themeData) applyTheme(settings.themeData);
+
+	// --- overlays (crosshair, keys, gif) ---
+	let crossEl = null, overlayEl = null, gifEl = null;
+	function ensureOverlays() { if (!crossEl) { crossEl = U.el('div', { style: { position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', pointerEvents: 'none', zIndex: 999998 } }); document.body.appendChild(crossEl); } if (!overlayEl) { overlayEl = U.el('div', { style: { position: 'fixed', right: '14px', bottom: '14px', pointerEvents: 'none', zIndex: 999998 } }); document.body.appendChild(overlayEl);  } }
+
+	function updateCrosshair() { ensureOverlays(); crossEl.innerHTML = ''; if (!settings.crossEnable) return; const tpl = CROSSHAIR_TEMPLATES[settings.crossType] || CROSSHAIR_TEMPLATES.Cross; crossEl.innerHTML = tpl(settings.crossSize, settings.crossColor, settings.crossThickness); }
+
+	function updateOverlay(id) {
+		const el = document.getElementById(id);
+		if (!el) return;
+
+		const currentlyHidden = el.style.display === 'none';
+
+		// Toggle visibility
+		el.style.display = currentlyHidden ? '' : 'none';
+
+		console.log(`[OVERLAY] ${id} => ${currentlyHidden ? 'ON' : 'OFF'}`);
+	}
+function updateGif() {
+    ensureOverlays();
 
     const fs = require('fs');
     const path = require('path');
 
-    function findFolder(startDir, folderName) {
-        let dir = startDir;
-        while (!fs.existsSync(path.join(dir, folderName)) && path.dirname(dir) !== dir) {
-            dir = path.dirname(dir);
-        }
-        if (fs.existsSync(path.join(dir, folderName))) return path.join(dir, folderName);
-        return null;
-    }
+    const raw = settings.animeGifPath || 'anime.gif';
+    const abs = path.isAbsolute(raw) ? raw : path.join(base, raw);
 
-    let dir = __dirname;
-    console.log(__dirname);
-    let omniversePath = findFolder(dir, 'omniverse');
-    let base;
-    if (!omniversePath) {
-        omniversePath = findFolder(dir, 'app');
-    }
-    if (!omniversePath) {
-        omniversePath = findFolder(dir, 'src');
-        base = omniversePath;
-    }
+    if (!settings.showAnimeGif || !fs.existsSync(abs)) return;
 
+    const full = 'file:///' + abs.replace(/\\/g, '/');
 
-    if (!omniversePath) {
-        console.error('Neither "omniverse" nor "app" was found!');
-    } else {
-        console.log('Using folder:', omniversePath);
-    }
+    // Remove previous GIF element if it exists
+    let gifEl = document.getElementById('customGifEl');
+    if (gifEl) gifEl.remove();
 
-    console.log('Using folder:', omniversePath);
-    if (omniversePath !== base) {
-        base = path.join(omniversePath, 'src');
-    }
-    const settingsPath = path.join(omniversePath, 'src', "settings.json");
+    // Create a new GIF container
+    gifEl = document.createElement('div');
+    gifEl.id = 'customGifEl';
+    gifEl.style.position = 'absolute';
+    gifEl.style.left = '0px';
+    gifEl.style.top = '0px';
+    gifEl.style.cursor = 'move';
+    gifEl.style.zIndex = 9999;
 
-    function readSettings() {
-        try {
-            if (!fs.existsSync(settingsPath)) return {};
-            return JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-        } catch {
-            return {};
-        }
-    }
+    // Create the GIF image
+    const img = document.createElement('img');
+    img.src = full;
+    img.style.maxWidth = '45vw';
+    img.style.transform = `scale(${settings.animeGifScale})`;
+    img.style.borderRadius = '8px';
+    img.style.opacity = '0.95';
+    img.style.display = 'block';
 
-    function writeSettings(obj) {
-        try {
-            fs.writeFileSync(settingsPath, JSON.stringify(obj, null, 2), 'utf-8');
-        } catch (err) {
-            console.error('Error writing settings:', err);
-        }
-    }
-    let settings = readSettings();
-    const overlayDefs = [{
-        id: 'dsOverlayStats',
-        name: 'Overlay Stats',
-        settingsId: null
-    },
-    {
-        id: 'keyDisplayOverlay',
-        name: 'Key Display',
-        settingsId: null
-    },
-    ];
 
-    const settingsBtn = utils.el('button', {
-        text: 'Settings'
-    });
-    Object.assign(settingsBtn.style, {
-        padding: '6px 12px',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontWeight: 'bold',
-        background: theme.purple1,
-        color: theme.text1
-    });
+    gifEl.appendChild(img);
+    document.body.appendChild(gifEl);
 
+    // Make the container draggable
+    U.makeDraggable(gifEl, { storageKey: 'animeGif_pos' });
 
-    const settingsOverlay = utils.el('div', {
-        id: 'omniverseSettingsOverlay'
-    });
-    Object.assign(settingsOverlay.style, {
-        display: 'none',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 9999
-    });
-
-
-    const box = utils.el('div');
-    Object.assign(box.style, {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        padding: '10px',
-        color: theme.text1,
-        borderRadius: '10px',
-        width: '100%',
-        boxSizing: 'border-box',
-    });
-
-
-    settingsOverlay.appendChild(box);
-
-
-
-    function saveTheme() {
-        utils.setRaw('theme', JSON.stringify(theme));
-    }
-
-    function createColorEditor(box, theme) {
-        const inputs = {};
-
-        // --- THEME PRESET WINDOW ---
-        function openPresetWindow() {
-            // Remove existing window if any
-            const existing = document.getElementById('themePresetWindow');
-            if (existing) existing.remove();
-
-            const presetWindow = document.createElement('div');
-            presetWindow.id = 'themePresetWindow';
-            Object.assign(presetWindow.style, {
-                position: 'absolute',
-                top: '50px',
-                right: '200px',
-                width: '200px',
-                padding: '10px',
-                background: '#222',
-                color: '#fff',
-                border: '1px solid #fff',
-                borderRadius: '8px',
-                zIndex: '9999',
-                boxShadow: '0 0 10px rgba(0,0,0,0.7)',
-            });
-            document.body.appendChild(presetWindow);
-
-            const title = document.createElement('h4');
-            title.textContent = 'Theme Preset';
-            Object.assign(title.style, { margin: '0 0 10px 0', fontSize: '1em' });
-            presetWindow.appendChild(title);
-
-            const presetSelect = document.createElement('select');
-            presetSelect.id = 'themePresetSelect';
-            Object.keys(themes).forEach(name => {
-                const option = document.createElement('option');
-                option.value = name;
-                option.textContent = name;
-                if (name === currentPreset) option.selected = true;
-                presetSelect.appendChild(option);
-            });
-            const customOption = document.createElement('option');
-            customOption.value = 'custom';
-            customOption.textContent = 'Custom';
-            if (currentPreset === 'custom') customOption.selected = true;
-            presetSelect.appendChild(customOption);
-            presetWindow.appendChild(presetSelect);
-
-            presetSelect.addEventListener('change', () => {
-                const selected = presetSelect.value;
-                if (selected === 'custom') return;
-
-                currentPreset = selected;
-                const presetTheme = themes[selected];
-                for (const key in presetTheme) {
-                    if (inputs[key]) {
-                        inputs[key].value = presetTheme[key];
-                        theme[key] = presetTheme[key];
-                        document.documentElement.style.setProperty(`--${key}`, presetTheme[key]);
-                    }
-                }
-                saveTheme();
-            });
-
-            // Close button
-            const closeBtn = document.createElement('button');
-            closeBtn.textContent = 'Close';
-            Object.assign(closeBtn.style, { marginTop: '10px', padding: '4px 8px', cursor: 'pointer' });
-            closeBtn.addEventListener('click', () => presetWindow.remove());
-            presetWindow.appendChild(closeBtn);
-        }
-
-        // Add a button to open the preset window
-        const openPresetBtn = document.createElement('button');
-        openPresetBtn.textContent = 'Open Theme Preset';
-        Object.assign(openPresetBtn.style, { marginBottom: '10px', cursor: 'pointer' });
-        openPresetBtn.addEventListener('click', openPresetWindow);
-        box.appendChild(openPresetBtn);
-        // Add color inputs
-        for (const key in theme) {
-            if (!/^#[0-9A-Fa-f]{3,6}$/.test(theme[key])) continue;
-            if (box.querySelector(`input[title="${key}"]`)) continue; // skip duplicates
-
-            const row = utils.el('div');
-            Object.assign(row.style, {
-                display: 'flex',
-                alignItems: 'center',
-                marginBottom: '4px'
-            });
-
-            const label = utils.el('label', { text: key });
-            Object.assign(label.style, {
-                flex: '1',
-                marginRight: '6px',
-                fontSize: '0.85em'
-            });
-
-            const input = utils.el('input');
-            Object.assign(input, { type: 'color', value: theme[key], title: key });
-            Object.assign(input.style, {
-                width: '24px',
-                height: '24px',
-                border: 'none',
-                padding: '0',
-                cursor: 'pointer'
-            });
-
-            inputs[key] = input;
-            row.appendChild(label);
-            row.appendChild(input);
-            box.appendChild(row);
-
-            input.addEventListener('input', () => {
-                theme[key] = input.value;
-                document.documentElement.style.setProperty(`--${key}`, input.value);
-                if (currentPreset !== 'custom') {
-                    currentPreset = 'custom';
-                    const presetSelect = box.querySelector('#themePresetSelect');
-                    if (presetSelect) presetSelect.value = 'custom';
-                }
-                saveTheme();
-            });
-        }
-
-        for (const key in inputs) {
-            document.documentElement.style.setProperty(`--${key}`, theme[key]);
-        }
-    }
-
-
-    // === STATS TOGGLES ===
-    const statsContainer = utils.el('div');
-    Object.assign(statsContainer.style, {
-        borderRadius: '6px',
-        marginBottom: '10px'
-    });
-
-    const statsTitle = utils.el('div', { text: 'Stats Display' });
-    Object.assign(statsTitle.style, {
-        fontWeight: 'bold',
-        marginBottom: '8px'
-    });
-    statsContainer.appendChild(statsTitle);
-
-    const checkboxContainer = utils.el('div');
-    Object.assign(checkboxContainer.style, {
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '8px'
-    });
-    statsContainer.appendChild(checkboxContainer);
-
-    const statOptions = [
-        { id: 'showDate', label: 'Date' },
-        { id: 'showTime', label: 'Time' },
-        { id: 'showOS', label: 'OS' },
-        { id: 'showCPU', label: 'CPU' },
-        { id: 'showServer', label: 'Server' },
-        { id: 'showSens', label: 'Sens' },
-        { id: 'showFPS', label: 'FPS' },
-        { id: 'showPing', label: 'Ping' }
-    ];
-
-    statOptions.forEach(stat => {
-        const row = utils.el('div');
-        Object.assign(row.style, {
-            display: 'flex',
-            alignItems: 'center',
-            minWidth: 'fit-content'
-        });
-
-        const checkbox = utils.el('input');
-        Object.assign(checkbox, {
-            type: 'checkbox',
-            id: stat.id,
-            checked: utils.getRaw(stat.id) !== 'false' // default to true
-        });
-        Object.assign(checkbox.style, {
-            marginRight: '4px'
-        });
-
-        const label = utils.el('label', { text: stat.label });
-        Object.assign(label.style, {
-            color: theme.text1,
-            fontSize: '0.9em'
-        });
-
-        checkbox.addEventListener('change', () => {
-            utils.setRaw(stat.id, checkbox.checked ? 'true' : 'false');
-            updateStatsVisibility(); // Function to be implemented in stats.js
-        });
-
-        row.appendChild(checkbox);
-        row.appendChild(label);
-        checkboxContainer.appendChild(row);
-    });
-
-    box.appendChild(statsContainer);
-
-
-
-    const warntitle = utils.el('div', {
-        text: 'NOTE: Restart client to apply changes'
-    });
-    Object.assign(warntitle.style, {
-        fontSize: '12px',
-        textAlign: 'center',
-        marginBottom: '8px'
-    });
-    box.appendChild(warntitle);
-
-    // === TOGGLE GUI KEY BUTTON ===
-    let toggleKey = settings.toggleKey ?? 'p'; // default key
-
-    const toggleBtn = utils.el('button', {
-        text: `Toggle GUI Key: ${toggleKey}`
-    });
-    Object.assign(toggleBtn.style, {
-        padding: '6px 12px',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontWeight: 'bold',
-        color: theme.text1,
-        background: theme.blue1
-    });
-    box.appendChild(toggleBtn);
-
-    let waitingForKey = false;
-
-    toggleBtn.addEventListener('click', () => {
-        waitingForKey = true;
-        toggleBtn.textContent = `Press any key...`;
-        toggleBtn.style.background = theme.yellow1;
-    });
-
-    // Listen for key press to set the new toggle key
-    window.addEventListener('keydown', (ev) => {
-        if (!waitingForKey) return;
-
-        const key = ev.key;
-        toggleKey = key;
-        settings.toggleKey = toggleKey;
-        writeSettings(settings);
-
-        toggleBtn.textContent = `Toggle GUI Key: ${toggleKey}`;
-        toggleBtn.style.background = theme.blue1;
-        waitingForKey = false;
-    });
-
-
-    // === ADBLOCKER BUTTON ===
-
-    let adblocker = settings.adblocker ?? false; // default false
-
-    const adblockBtn = utils.el('button', {
-        text: `Manual .webp swapper: ${adblocker ? 'ON' : 'OFF'}`
-    });
-    Object.assign(adblockBtn.style, {
-        padding: '6px 12px',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontWeight: 'bold',
-        color: theme.text1,
-        background: adblocker ? theme.green1 : theme.red3
-    });
-    box.appendChild(adblockBtn);
-
-    adblockBtn.addEventListener('click', () => {
-        adblocker = !adblocker;
-        settings.adblocker = adblocker;
-        writeSettings(settings);
-        adblockBtn.textContent = `Manual .webp swapper: ${adblocker ? 'ON' : 'OFF'}`;
-        adblockBtn.style.background = adblocker ? theme.green1 : theme.red3;
-    });
-
-    // === RPC BUTTON ===
-    let rpc = settings.rpc ?? true; // default true
-
-    const rpcBtn = utils.el('button', {
-        text: `Discord Status: ${rpc ? 'ON' : 'OFF'}`
-    });
-    Object.assign(rpcBtn.style, {
-        padding: '6px 12px',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontWeight: 'bold',
-        color: theme.text1,
-        background: rpc ? theme.green1 : theme.red3
-    });
-    box.appendChild(rpcBtn);
-
-    rpcBtn.addEventListener('click', () => {
-        rpc = !rpc;
-        settings.rpc = rpc;
-        writeSettings(settings);
-        rpcBtn.textContent = `Discord Status: ${rpc ? 'ON' : 'OFF'}`;
-        rpcBtn.style.background = rpc ? theme.green1 : theme.red3;
-    });
-
-    // === HIGH PERFORMANCE GPU BUTTON ===
-    let highPerf = settings.forceHighPerformanceGPU ?? false; // default false
-
-    const highPerfBtn = utils.el('button', {
-        text: `High Performance Mode: ${highPerf ? 'ON' : 'OFF'}`
-    });
-    Object.assign(highPerfBtn.style, {
-        padding: '6px 12px',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontWeight: 'bold',
-        color: theme.text1,
-        background: highPerf ? theme.green1 : theme.red3
-    });
-    box.appendChild(highPerfBtn);
-
-    highPerfBtn.addEventListener('click', () => {
-        highPerf = !highPerf;
-
-        // Sync both settings
-        settings.forceHighPerformanceGPU = highPerf;
-        settings.disableFrameRateLimit = highPerf;
-
-        writeSettings(settings);
-
-        highPerfBtn.textContent = `High Performance Mode: ${highPerf ? 'ON' : 'OFF'}`;
-        highPerfBtn.style.background = highPerf ? theme.green1 : theme.red3;
-    });
-
-    // === SETTINGS TOGGLE BUTTON ===
-    settingsBtn.addEventListener('click', () => {
-        settingsOverlay.style.display =
-            settingsOverlay.style.display === 'none' ? 'flex' : 'none';
-    });
-
-
-    const gui = utils.el('div', {
-        id: 'dsGuiContainer'
-    });
-
-    Object.assign(gui.style, {
-        position: 'fixed',
-        top: '10px',
-        right: '10px',
-        width: '200px',                        // same as your box
-        paddingTop: '20px',
-        paddingBottom: '20px',
-        //background: 'rgba(0,0,0,0.4)',
-        //backdropFilter: 'blur(10px)',
-        color: theme.text1,
-        borderRadius: '10px',
-        boxShadow: '0 0 20px rgba(0,0,0,0.5)',
-        zIndex: 100,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        cursor: 'move',
-    });
-
-    document.body.appendChild(gui);
-
-
-    // --- Tabs container ---
-    const tabs = utils.el('div');
-    Object.assign(tabs.style, {
-        display: 'flex',
-        gap: '4px',
-        marginBottom: '8px',
-        flexDirection: 'column', // stack title above buttons
-    });
-
-    const title = utils.el('div', {
-        text: `Omniverse | Toggle: ${settings.toggleKey}`
-    });
-    title.style.fontWeight = 'bold';
-    title.style.textAlign = 'center';
-    tabs.appendChild(title);
-
-    // Tab buttons
-    const mainTabBtn = utils.el('button', { text: 'Main' });
-    const settingsTabBtn = utils.el('button', { text: 'Settings' });
-    const themeTabBtn = utils.el('button', { text: 'Theme' });
-    const crosshairTabBtn = utils.el('button', { text: 'Crosshair Editor' });
-    const funTabBtn = utils.el('button', { text: 'Fun' });
-    const bindsTabBtn = utils.el('button', { text: 'GIF' });
-
-    [mainTabBtn, settingsTabBtn, themeTabBtn, crosshairTabBtn, funTabBtn, bindsTabBtn].forEach(btn => {
-        Object.assign(btn.style, {
-            flex: 1,
-            padding: '6px 12px',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontWeight: 'bold',
-            color: theme.red1,
-        });
-        tabs.appendChild(btn);
-    });
-
-    gui.insertBefore(tabs, gui.firstChild);
-
-    // --- Main GUI content ---
-    const mainGui = utils.el('div');
-    Object.assign(mainGui.style, {
-        padding: '20px',
-        width: '200px',
-        backdropFilter: 'blur(10px)',
-        color: theme.text1,
-        borderRadius: '10px',
-        zIndex: 100000,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        cursor: 'move',
-    });
-
-    // Move all existing children (except tabs) into mainGui
-    while (gui.children.length > 1) {
-        mainGui.appendChild(gui.children[1]);
-    }
-    gui.appendChild(mainGui);
-
-    // --- Theme tab ---
-    const themeTabContainer = utils.el('div');
-    Object.assign(themeTabContainer.style, {
-        display: 'none',
-        flexDirection: 'column',
-        gap: '8px',
-        padding: '8px',
-    });
-    createColorEditor(themeTabContainer, theme);
-    gui.appendChild(themeTabContainer);
-    // --- Fun tab container ---
-    const funTabContainer = utils.el('div');
-    Object.assign(funTabContainer.style, {
-        display: 'none',
-        flexDirection: 'column',
-        gap: '8px',
-        padding: '8px',
-    });
-
-    // Create inner box for Fun tab content
-    const funBox = utils.el('div');
-    Object.assign(funBox.style, {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        padding: '10px',
-        borderRadius: '10px',
-        width: '100%',
-        boxSizing: 'border-box',
-    });
-
-    if (settings.rainbow) {
-        try {
-        window.toggleRainbow();
-        } catch {
-
-        }
-    }
-    // --- Rainbow toggle button ---
-    const rainbowBtn = utils.el('button', {
-        text: `Rainbow: ${settings.rainbow ? 'ON' : 'OFF'}`
-    });
-    Object.assign(rainbowBtn.style, {
-        padding: '6px 12px',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontWeight: 'bold',
-        background: settings.rainbow ? theme.blue1 : theme.red1,
-        color: theme.text1,
-    });
-
-    // --- Toggle logic ---
-    rainbowBtn.addEventListener('click', () => {
-        settings.rainbow = !settings.rainbow; // flip state
-        rainbowBtn.textContent = `Rainbow: ${settings.rainbow ? 'ON' : 'OFF'}`;
-        rainbowBtn.style.background = settings.rainbow ? theme.blue1 : theme.red1;
-            writeSettings(settings);
-            window.toggleRainbow();
-    });
-    // --- Rainbow toggle button ---
-    const funBtn = utils.el('button', {
-        text: `Fun Mode (This tab's content) (reload client): ${settings.funMode ? 'ON' : 'OFF'}`
-    });
-    Object.assign(funBtn.style, {
-        padding: '6px 12px',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontWeight: 'bold',
-        background: settings.funMode ? theme.blue1 : theme.red1,
-        color: theme.text1,
-    });
-
-    // --- Toggle logic ---
-    funBtn.addEventListener('click', () => {
-        settings.funMode = !settings.funMode; // flip state
-        funBtn.textContent = `Fun Mode (This tab's content): ${settings.funMode ? 'ON' : 'OFF'}`;
-        funBtn.style.background = settings.funMode ? theme.blue1 : theme.red1;
-            writeSettings(settings);
-    });
-
-    // Append button to funBox, then box to container
-    funBox.appendChild(funBtn);
-    funBox.appendChild(rainbowBtn);
-
-
-Object.assign(bindsTabBtn.style, {
-    flex: 1,
-    padding: '6px 12px',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontWeight: 'bold',
-    color: theme.red1,
-});
-
-tabs.appendChild(bindsTabBtn);
-const bindsTabContainer = utils.el('div');
-Object.assign(bindsTabContainer.style, {
-    display: 'none',
-    flexDirection: 'column',
-    gap: '12px',
-    padding: '8px',
-    zIndex: 100000
-});
-gui.appendChild(bindsTabContainer);
-
-
-
-// --- create GIF ---
-const img = document.createElement("img");
-img.src = `${base}/anime.gif`; // your base path variable
-img.style.position = "absolute";
-img.style.left = "200px";
-img.style.top = "200px";
-img.style.cursor = "grab";
-img.style.zIndex = "999999";
-document.body.appendChild(img);
-
-// --- make draggable helper ---
-utils.makeDraggable(img);
-
-// --- apply initial scale and visibility ---
-function applyGifScale() {
-    img.style.width = `${img.naturalWidth * settings.animeGifScale}px`;
-    img.style.height = `${img.naturalHeight * settings.animeGifScale}px`;
-    img.style.display = settings.showAnimeGif ? "block" : "none";
-}
-img.onload = applyGifScale;
-const gifNote = utils.el('div', {
-    text: 'Change this by swapping out /resources/app/src/anime.gif'
-});
-Object.assign(gifNote.style, {
-    padding: '6px 12px',
-    borderRadius: '6px',
-    background: theme.bgLight,
-    color: theme.text1,
-    fontSize: '12px',
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginTop: '8px'
-});
-
-bindsTabContainer.appendChild(gifNote);
-// --- toggle GIF visibility button ---
-const toggleGifBtn = utils.el('button', {
-    text: `Anime GIF: ${settings.showAnimeGif ? 'ON' : 'OFF'}`
-});
-Object.assign(toggleGifBtn.style, {
-    padding: '6px 12px',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontWeight: 'bold',
-    background: settings.showAnimeGif ? theme.blue1 : theme.red1,
-    color: theme.text1,
-});
-toggleGifBtn.addEventListener('click', () => {
-    settings.showAnimeGif = !settings.showAnimeGif;
-    toggleGifBtn.textContent = `Anime GIF: ${settings.showAnimeGif ? 'ON' : 'OFF'}`;
-    toggleGifBtn.style.background = settings.showAnimeGif ? theme.blue1 : theme.red1;
-    applyGifScale();
-    writeSettings(settings);
-});
-bindsTabContainer.appendChild(toggleGifBtn);
-
-// --- cycle size button ---
-const sizeBtn = utils.el('button', {
-    text: 'Size: Medium'
-});
-Object.assign(sizeBtn.style, {
-    padding: '6px 12px',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontWeight: 'bold',
-    background: theme.bgLight,
-    color: theme.text1,
-});
-
-// possible states
-const sizes = [
-    { name: 'Small', scale: 0.25 },
-    { name: 'Medium', scale: 0.5 },
-    { name: 'Large', scale: 1 }
-];
-
-// set initial button text based on current scale
-let currentIndex = sizes.findIndex(s => s.scale === settings.animeGifScale);
-if (currentIndex === -1) currentIndex = 1; // default to Medium
-sizeBtn.textContent = `Size: ${sizes[currentIndex].name}`;
-
-sizeBtn.addEventListener('click', () => {
-    currentIndex = (currentIndex + 1) % sizes.length;
-    const size = sizes[currentIndex];
-    settings.animeGifScale = size.scale;
-    sizeBtn.textContent = `Size: ${size.name}`;
-    applyGifScale();
-    writeSettings(settings);
-});
-
-bindsTabContainer.appendChild(sizeBtn);
-
-// --- SKIN PRESET WINDOW ---
-function openSkinPresetWindow() {
-    // Remove existing if open
-    const existing = document.getElementById('skinPresetWindow');
-    if (existing) existing.remove();
-
-    // Base window
-    const presetWindow = document.createElement('div');
-    presetWindow.id = 'skinPresetWindow';
-    Object.assign(presetWindow.style, {
-        position: 'absolute',
-        top: '50px',
-        right: '200px',
-        width: '240px',
-        padding: '10px',
-        background: '#222',
-        color: '#fff',
-        border: '1px solid #fff',
-        borderRadius: '8px',
-        zIndex: '9999',
-        boxShadow: '0 0 10px rgba(0,0,0,0.7)',
-        fontFamily: 'sans-serif',
-    });
-    document.body.appendChild(presetWindow);
-
-    const title = document.createElement('h4');
-    title.textContent = 'Skin Presets (only works when signed in, choose default to use custom webp swapper)';
-    Object.assign(title.style, { margin: '0 0 10px 0', fontSize: '1em', textAlign: 'center' });
-    presetWindow.appendChild(title);
-
-    // --- Available skins (even numbers only) ---
-    const skins = {
-        "384": "default", "385": "Default",
-        "386": "bacon", "387": "Bacon",
-        "388": "linen", "389": "Fresh Linen",
-        "390": "greencamo", "391": "Green Camo",
-        "392": "redcamo", "393": "Red Camo",
-        "394": "tiger", "395": "Tigris",
-        "396": "carbon", "397": "Carbon Fiber",
-        "398": "cherry", "399": "Blossom",
-        "400": "prism", "401": "Gem Stone",
-        "402": "splatter", "403": "Marble",
-        "404": "swirl", "405": "Swirl",
-        "406": "vapor", "407": "Vapor Wave",
-        "408": "astro", "409": "Astro",
-        "410": "payday", "411": "Pay Day",
-        "412": "safari", "413": "Safari",
-        "414": "snowcamo", "415": "Snow Camo",
-        "416": "rustic", "417": "Royal",
-        "418": "hydro", "419": "Hydrodip",
-        "420": "ice", "421": "Frostbite",
-        "422": "silly", "423": "Silly",
-        "424": "alez", "425": "Alez",
-        "426": "horizon", "427": "Horizon",
-        "428": "quackster", "429": "QuaK",
-        "430": "matrix", "431": "Matrix",
-        "432": "neon", "433": "Neon",
-        "434": "winter", "435": "Winter '22",
-        "436": "hlwn", "437": "HLWN '23",
-        "438": "summer", "439": "Summer '24",
-        "440": "birthday", "441": "1st Birthday",
-    };
-
-    const evenSkins = {};
-    for (const [key, value] of Object.entries(skins)) {
-        if (parseInt(key) % 2 === 0) {
-            evenSkins[key] = value;
-        }
-    }
-
-    // --- Load or default saved selection ---
-    const saved = JSON.parse(localStorage.getItem('aura_selectedSkins') || '{}');
-    const selected = Object.assign(
-        { ar: 'default', smg: 'default', shotgun: 'default', awp: 'default' },
-        saved
-    );
-
-    // --- Dropdown builder ---
-    function createDropdown(labelText, key) {
-        const wrapper = document.createElement('div');
-        wrapper.style.marginBottom = '8px';
-
-        const label = document.createElement('label');
-        label.textContent = labelText;
-        label.style.display = 'block';
-        label.style.marginBottom = '4px';
-        label.style.fontSize = '0.9em';
-
-        const select = document.createElement('select');
-        Object.assign(select.style, {
-            width: '100%',
-            padding: '4px',
-            borderRadius: '4px',
-            border: 'none',
-            background: '#333',
-            color: '#fff',
-        });
-
-        for (const val of Object.values(evenSkins)) {
-            const option = document.createElement('option');
-            option.value = val;
-            option.textContent = val.charAt(0).toUpperCase() + val.slice(1);
-            if (selected[key] === val) option.selected = true;
-            select.appendChild(option);
-        }
-
-        select.addEventListener('change', () => {
-            selected[key] = select.value;
-            localStorage.setItem('aura_selectedSkins', JSON.stringify(selected));
-        });
-
-        wrapper.appendChild(label);
-        wrapper.appendChild(select);
-        presetWindow.appendChild(wrapper);
-    }
-
-    createDropdown('AR Skin', 'ar');
-    createDropdown('SMG Skin', 'smg');
-    createDropdown('Shotgun Skin', 'shotgun');
-    createDropdown('AWP Skin', 'awp');
-
-    // --- Close button ---
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = 'Close';
-    Object.assign(closeBtn.style, {
-        marginTop: '10px',
-        padding: '4px 8px',
-        cursor: 'pointer',
-        width: '100%',
-    });
-    closeBtn.addEventListener('click', () => presetWindow.remove());
-    presetWindow.appendChild(closeBtn);
-}
-
-// --- Button to open ---
-const openSkinBtn = document.createElement('button');
-openSkinBtn.textContent = 'Open Skin Preset';
-Object.assign(openSkinBtn.style, {
-    marginBottom: '10px',
-    cursor: 'pointer',
-});
-openSkinBtn.addEventListener('click', openSkinPresetWindow);
-funBox.appendChild(openSkinBtn);
-
-    funTabContainer.appendChild(funBox);
-
-    // Later, append funTabContainer to gui (after mainGui and other tab containers)
-    gui.appendChild(funTabContainer);
-
-    // --- Settings tab ---
-    const settingsTabContainer = utils.el('div');
-    Object.assign(settingsTabContainer.style, {
-        display: 'none',
-        flexDirection: 'column',
-        gap: '8px',
-        padding: '8px',
-    });
-    settingsTabContainer.appendChild(box); // your original settings overlay content
-    gui.appendChild(settingsTabContainer);
-
-    // --- Crosshair tab ---
-    const crosshairTabContainer = utils.el('div');
-    Object.assign(crosshairTabContainer.style, {
-        display: 'none',
-        flexDirection: 'column',
-        gap: '8px',
-        padding: '8px',
-    });
-    const a = new CrosshairOverlay(utils); // from your crosshair editor
-    let chPanel = a.createSettingsPanel();
-
-    chPanel.style.position = 'relative'; // IMPORTANT: override fixed positioning
-    console.log(chPanel);
-    crosshairTabContainer.appendChild(chPanel);
-    gui.appendChild(crosshairTabContainer);
-    a.init();
-
-    // --- Tab switching ---
-    function showTab(tab) {
-        // Hide all tabs
-        mainGui.style.display = 'none';
-        settingsTabContainer.style.display = 'none';
-        themeTabContainer.style.display = 'none';
-        crosshairTabContainer.style.display = 'none';
-           funTabContainer.style.display = 'none'; // <-- new
-          bindsTabContainer.style.display = 'none'; // <-- new
-        // Reset button styles
-        [mainTabBtn, settingsTabBtn, themeTabBtn, crosshairTabBtn, funTabBtn, bindsTabBtn].forEach(btn => {
-            btn.style.background = theme.red1;
-            btn.style.color = theme.text1;
-        });
-
-        // Show selected tab
-        if (tab === 'main') {
-            mainGui.style.display = 'flex';
-            mainTabBtn.style.background = theme.blue1;
-        } else if (tab === 'settings') {
-            settingsTabContainer.style.display = 'flex';
-            settingsTabBtn.style.background = theme.blue1;
-        } else if (tab === 'theme') {
-            themeTabContainer.style.display = 'flex';
-            themeTabBtn.style.background = theme.blue1;
-        } else if (tab === 'crosshair') {
-            crosshairTabContainer.style.display = 'flex';
-            crosshairTabBtn.style.background = theme.blue1;
-        }else if (tab === 'fun') { // <-- new
-        funTabContainer.style.display = 'flex';
-        funTabBtn.style.background = theme.blue1;
-    }
-            else if (tab === 'keybind') { // <-- new
-        bindsTabContainer.style.display = 'flex';
-        bindsTabBtn.style.background = theme.blue1;
-    }
-    }
-
-    // Initial tab
-    showTab('main');
-
-    // Tab button listeners
-    mainTabBtn.addEventListener('click', () => showTab('main'));
-    settingsTabBtn.addEventListener('click', () => showTab('settings'));
-    themeTabBtn.addEventListener('click', () => showTab('theme'));
-    crosshairTabBtn.addEventListener('click', () => showTab('crosshair'));
-    funTabBtn.addEventListener('click', () => showTab('fun'));
-    bindsTabBtn.addEventListener('click', () => showTab('keybind'));
-    // Hide old settings overlay if exists
-    if (settingsBtn) settingsBtn.remove();
-    if (settingsOverlay) settingsOverlay.style.display = 'none';
-
-
-    // overlay buttons container & state
-    const overlayButtons = {};
-    const state = {};
-    overlayDefs.forEach(def => {
-        const saved = utils.getRaw(def.id);
-        state[def.id] = saved === null ? true : (saved === 'true' || saved === true);
-    });
-
-    for (const def of overlayDefs) {
-        const btn = utils.el('button', {
-            text: `${def.name}: ${state[def.id] ? 'ON' : 'OFF'}`
-        });
-        Object.assign(btn.style, {
-            padding: '6px 12px',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontWeight: 'bold',
-            color: theme.text1
-        });
-        mainGui.appendChild(btn);
-        overlayButtons[def.id] = btn;
-    }
-
-    // Fetch rank button
-    const fetchRankBtn = utils.el('button', {
-        text: 'Fetch My Rank'
-    });
-    Object.assign(fetchRankBtn.style, {
-        padding: '6px 12px',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontWeight: 'bold',
-        background: theme.blue1,
-        color: theme.text1
-    });
-    mainGui.appendChild(fetchRankBtn);
-    fetchRankBtn.addEventListener('click', async () => {
-        const overlay = document.createElement('div');
-        overlay.style.position = 'fixed';
-        overlay.style.top = 0;
-        overlay.style.left = 0;
-        overlay.style.width = '100vw';
-        overlay.style.height = '100vh';
-        overlay.style.background = 'rgba(0,0,0,0.6)';
-        overlay.style.display = 'flex';
-        overlay.style.justifyContent = 'center';
-        overlay.style.alignItems = 'center';
-        overlay.style.zIndex = 9999;
-
-        const box = document.createElement('div');
-        box.style.background = '#1e1e1e';
-        box.style.padding = '30px';
-        box.style.borderRadius = '10px';
-        box.style.boxShadow = '0 0 20px rgba(0,0,0,0.5)';
-        box.style.textAlign = 'center';
-        box.style.color = theme.text1;
-        box.style.fontFamily = 'Arial, sans-serif';
-
-        const label = document.createElement('div');
-        label.textContent = 'Enter your username:';
-        label.style.marginBottom = '10px';
-
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.style.padding = '10px';
-        input.style.borderRadius = '5px';
-        input.style.border = 'none';
-        input.style.width = '200px';
-        input.style.marginBottom = '10px';
-        input.style.fontSize = '16px';
-
-        const submit = document.createElement('button');
-        submit.textContent = 'Submit';
-        submit.style.padding = '10px 20px';
-        submit.style.border = 'none';
-        submit.style.borderRadius = '5px';
-        submit.style.background = '#4CAF50';
-        submit.style.color = theme.text1;
-        submit.style.cursor = 'pointer';
-        submit.style.fontSize = '16px';
-
-        submit.addEventListener('click', async () => {
-            const username = input.value.trim();
-            console.log(username);
-            if (!username) return;
-
-            try {
-                const rank = await fetchLeaderboardRank(username);
-                alert(`${rank}`);
-                document.body.removeChild(overlay);
-            } catch (err) {
-                console.error('Failed to fetch leaderboard rank:', err);
-                alert('Failed to fetch rank');
-                document.body.removeChild(overlay);
-            }
-        });
-
-
-        box.appendChild(label);
-        box.appendChild(input);
-        box.appendChild(submit);
-        overlay.appendChild(box);
-        document.body.appendChild(overlay);
-        input.focus();
-    });
-
-    // Reset button
-    const resetBtn = utils.el('button', {
-        text: 'Reset Omniverse'
-    });
-    Object.assign(resetBtn.style, {
-        padding: '6px 12px',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontWeight: 'bold',
-        background: theme.red3,
-        color: theme.text1
-    });
-    mainGui.appendChild(resetBtn);
-    resetBtn.addEventListener('click', () => {
-        const idsToReset = ['dsOverlayStats', 'keyDisplayOverlay', 'dsGuiContainer', 'minimalstats', 'theme'];
-        idsToReset.forEach(id => {
-            utils.remove(id + '_pos');
-            utils.remove(id);
-        });
-        location.reload();
-    });
-
-    // Create the update button
-    const updateBtn = utils.el('button', {
-        text: 'Checking updates...'
-    });
-    Object.assign(updateBtn.style, {
-        padding: '6px 12px',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontWeight: 'bold',
-        background: theme.yellow1,
-        color: theme.text1
-    });
-    // Append it to the existing GUI container
-    mainGui.appendChild(updateBtn);
-
-
-
-
-    async function checkForUpdates() {
-        try {
-            // Fetch latest version from GitHub
-            const res = await fetch('https://raw.githubusercontent.com/Typhoonz0/omniverse/main/version.txt');
-            const remoteVersion = (await res.text()).trim();
-            let dir = __dirname;
-            while (!fs.existsSync(path.join(dir, 'omniverse')) && path.dirname(dir) !== dir)
-                dir = path.dirname(dir);
-
-            let versionPath = path.join(omniversePath, "version.txt");
-            console.log(base, versionPath);
-            if (base === omniversePath) {
-                versionPath = path.join(omniversePath, "..", "version.txt");
-            }
-            console.log(versionPath);
-            let localVersion = 'unknown';
-
-            try {
-                localVersion = fs.readFileSync(versionPath, 'utf8').trim();
-            } catch (err) {
-                console.error('Failed to read version.txt:', err);
-            }
-
-            console.log('Local version:', localVersion);
-            if (remoteVersion !== localVersion) {
-                updateBtn.textContent = "Update Available!";
-                updateBtn.style.background = "#4caf50";
-                updateBtn.addEventListener('click', () => {
-                    window.open('https://github.com/Typhoonz0/omniverse', '_blank');
-                });
-            } else {
-                updateBtn.textContent = "Up to Date";
-                updateBtn.style.background = theme.blue1;
-                updateBtn.disabled = true;
-            }
-        } catch (err) {
-            console.error("Update check failed:", err);
-            updateBtn.textContent = "Update Check Failed";
-            updateBtn.style.background = theme.red3;
-        }
-    }
-
-    // Run update check after GUI has loaded
-    checkForUpdates();
-
-    // Helper to update visibility and button text/style
-    function updateVisibility(id, settingsId) {
-        const elTarget = document.getElementById(id);
-        if (elTarget) elTarget.style.display = state[id] ? '' : 'none';
-        if (settingsId) {
-            const settingsEl = document.getElementById(settingsId);
-            if (settingsEl) settingsEl.style.display = state[id] ? 'block' : 'none';
-        }
-        const btn = overlayButtons[id];
-        const def = overlayDefs.find(o => o.id === id);
-        if (btn && def) {
-            btn.textContent = `${def.name}: ${state[id] ? 'ON' : 'OFF'}`;
-            btn.style.background = state[id] ? theme.green1 : theme.red3;
-            utils.setRaw(id, state[id] ? 'true' : 'false');
-        }
-    }
-
-    // initialize visibility and add click handlers
-    overlayDefs.forEach(def => {
-        updateVisibility(def.id, def.settingsId);
-        const btn = overlayButtons[def.id];
-        if (!btn) return;
-        btn.addEventListener('click', () => {
-            state[def.id] = !state[def.id];
-            updateVisibility(def.id, def.settingsId);
-        });
-    });
-
-    // Toggle GUI with P
-    window.addEventListener('keydown', (e) => {
-        if (e.key.toLowerCase() === settings.toggleKey) {
-            gui.style.display = gui.style.display === 'none' ? 'flex' : 'none';
-        }
-    });
-
-    // Make GUI draggable and persist
-    utils.makeDraggable(gui, {
-        storageKey: 'dsGuiContainer'
-    });
-
-    ['dsOverlayStats', 'keyDisplayOverlay', 'dsGuiContainer'].forEach(id => {
-        const elNode = document.getElementById(id);
-        if (!elNode) return;
-        const pos = utils.loadPosition(id);
-        if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
-            elNode.style.left = pos.x + 'px';
-            elNode.style.top = pos.y + 'px';
-            elNode.style.right = 'auto';
-        }
-    });
-
-    async function fetchLeaderboardRank(username) {
-        try {
-            const response = await fetch('https://login.deadshot.io/leaderboards');
-            const data = await response.json();
-            const categories = ["daily", "weekly", "alltime"];
-            const result = {};
-
-            for (const category of categories) {
-                if (data[category] && data[category].kills) {
-                    const leaderboard = data[category].kills;
-                    leaderboard.sort((a, b) => b.kills - a.kills);
-                    const player = leaderboard.find(p => p.name === username);
-                    result[category] = player ? `#${leaderboard.indexOf(player) + 1}` : "Not found";
-                } else {
-                    result[category] = "Not found";
-                }
-            }
-
-            // Convert to a string
-            return `Daily: ${result.daily}\nWeekly: ${result.weekly}\nAll-time: ${result.alltime}`;
-        } catch (error) {
-            console.error('Error fetching leaderboard:', error);
-            return "Daily: Error\nWeekly: Error\nAll-time: Error";
-        }
-    }
-
-
-
-    const footer = utils.el('div', {
-        text: 'xliam.space'
-    });
-    footer.style.textAlign = 'center';
-    gui.appendChild(footer);
 }
 
 
-module.exports = { GUI }
+	if (settings.rainbow) {
+		try {
+			window.toggleRainbow();
+		} catch {
+
+		}
+	}
+	// --- FPS and keys overlay logic ---
+	let lastTick = performance.now(), frameCount = 0; function fpsLoop() { const now = performance.now(); frameCount++; if (now - lastTick >= 500) { const fps = Math.round((frameCount * 1000) / (now - lastTick)); frameCount = 0; lastTick = now; const fEl = document.getElementById('ov-fps'); if (fEl) fEl.textContent = fps; } requestAnimationFrame(fpsLoop); } requestAnimationFrame(fpsLoop);
+
+	const pressed = new Set(); window.addEventListener('keydown', e => { pressed.add(e.key); updateKeys(); if (e.key === settings.toggleKey) gui.style.display = gui.style.display === 'none' ? 'flex' : 'none'; }); window.addEventListener('keyup', e => { pressed.delete(e.key); updateKeys(); });
+	function updateKeys() { const el = document.getElementById('ov-keys'); if (el) el.textContent = Array.from(pressed).slice(0, 6).join(', ') || '-'; }
+
+	// --- Save / periodic auto-save ---
+	function save(forceFile) { writeSettings(settings); U.set('toggleKey', settings.toggleKey); }
+	setInterval(() => { writeSettings(settings); }, 5000);
+
+
+	// --- API exposure (compatibility with oldgui globals) ---
+	const API = { show: () => gui.style.display = 'flex', hide: () => gui.style.display = 'none', toggle: () => { gui.style.display = gui.style.display === 'none' ? 'flex' : 'none'; }, saveSettings: () => save(true), getSettings: () => settings, setSetting: (k, v) => { settings[k] = v; save(); } };
+	window.OV_GUI = API; window.OV_SETTINGS = settings; window.OV_SAVE = save;
+
+	// initialize and mount
+	createTabs(); renderContent(); document.body.appendChild(gui); makeDraggable(gui); ensureOverlays(); updateCrosshair(); updateOverlay(); updateGif(); 
+
+	return API;
+}
+
+// So the GUI gets created on import very broken but it works
+try { if (typeof window !== 'undefined') window.OMNIVERSE_GUI = GUI(window.utils || null, window.theme || {}, window.themes || {}, null, null); } catch (e) { console.log(e) }

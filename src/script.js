@@ -50,8 +50,7 @@ const utils = require(path.join(base, 'modules', 'utils.js'));
 const themes = require(path.join(base, 'themes.json'));
 const { StatsOverlay } = require(path.join(base, 'modules', 'stats.js'));
 const { KeysOverlay } = require(path.join(base, 'modules', 'keysoverlay.js'));
-const { CrosshairOverlay } = require(path.join(base, 'modules', 'crosshair.js'));
-const { GUI } = require(path.join(base, 'modules', 'gui.js'));
+const { GUI } = require(path.join(base, 'modules', 'gui.js')); // Gui is created on import, lol
 
 let themeRaw = utils.getRaw('theme');
 let theme;
@@ -85,8 +84,6 @@ utils.injectStyle(`
 
 StatsOverlay(utils, theme);
 KeysOverlay(utils, theme);
-GUI(utils, theme, themes, currentPreset, CrosshairOverlay);
-
 
 let version = 'Unknown';
 try {

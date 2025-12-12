@@ -13,10 +13,7 @@ const { app, BrowserWindow, protocol} = require("electron");
 const RPC = require("discord-rpc");
 const path = require("path");
 const fs = require("fs");
-const { ElectronBlocker} = require("@cliqz/adblocker-electron");
-const fetch = require("cross-fetch");
 
-let gameWindow;
 let adblock;
 let rpc;
 let dir = __dirname;
@@ -97,11 +94,7 @@ const createWindow = () => {
 			sandbox: false,
 		},
 	};
-
-	// Only add preload when funmode is true
-	if (funmode) {
-		windowOptions.webPreferences.preload = path.join(__dirname, 'preload.js');
-	}
+	windowOptions.webPreferences.preload = path.join(__dirname, 'preload.js');
 
 	const gameWindow = new BrowserWindow(windowOptions);
 	gameWindow.setMenuBarVisibility(false);
@@ -153,6 +146,7 @@ app.whenReady().then(() => {
 			"*://deadshot.io/skins/compressed/*.webp",
 			"*://deadshot.io/promo/*.webp",
 			"*://deadshot.io/textures/*.webp",
+
 		],
 	};
 
