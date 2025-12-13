@@ -11,40 +11,38 @@
 const fs = require('fs');
 const path = require('path');
 
-
-function findFolder(startDir, folderName) {
-    let dir = startDir;
-    while (!fs.existsSync(path.join(dir, folderName)) && path.dirname(dir) !== dir) {
-        dir = path.dirname(dir);
+// Checks a few locations for the rest of the code as path.dirname and __dirname by default is different on the compiled release and the interpreted release 
+// This is an Electron issue and i can't fix it
+// This function would go in utils.js as it will belong in multiple files but I can't find utils.js without it 
+function resolveBase(startDir) {
+    function findFolder(dir, name) {
+        while (!fs.existsSync(path.join(dir, name)) && path.dirname(dir) !== dir) {
+            dir = path.dirname(dir);
+        }
+        return fs.existsSync(path.join(dir, name))
+            ? path.join(dir, name)
+            : null;
     }
-    if (fs.existsSync(path.join(dir, folderName))) return path.join(dir, folderName);
-    return null;
-}
 
-let dir  = __dirname;
-console.log(__dirname);
-let omniversePath = findFolder(dir, 'omniverse');
-let base;
-if (!omniversePath) {
-    // If omniverse not found, repeat search for 'app'
-    omniversePath = findFolder(dir, 'app');
-}
-if (!omniversePath) {
-    omniversePath = findFolder(dir, 'src');
-    base = omniversePath;
-}
+    console.log(startDir);
 
+    let omniversePath =
+        findFolder(startDir, "omniverse") ||
+        findFolder(startDir, "app") ||
+        findFolder(startDir, "src");
 
-if (!omniversePath) {
-    console.error('Neither "omniverse" nor "app" was found!');
-} else {
-    console.log('Using folder:', omniversePath);
-}
+    if (!omniversePath) {
+        console.error('Neither "omniverse", "app", nor "src" was found!');
+        return null;
+    }
 
-console.log('Using folder:', omniversePath);
-if (omniversePath !== base) {
-    base = path.join(omniversePath, 'src');
+    console.log("Using folder:", omniversePath);
+
+    return path.basename(omniversePath) === "src"
+        ? omniversePath
+        : path.join(omniversePath, "src");
 }
+base = resolveBase(__dirname);
 
 const utils = require(path.join(base, 'modules', 'utils.js'));
 const themes = require(path.join(base, 'themes.json'));
@@ -84,6 +82,7 @@ utils.injectStyle(`
 
 StatsOverlay(utils, theme);
 KeysOverlay(utils, theme);
+GUI(utils); 
 
 let version = 'Unknown';
 try {

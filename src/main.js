@@ -9,45 +9,34 @@
 // By xLiam1 | xliam.space
 
 
-const { app, BrowserWindow, protocol} = require("electron");
+const { app, BrowserWindow, protocol } = require("electron");
 const RPC = require("discord-rpc");
 const path = require("path");
 const fs = require("fs");
 
-let adblock;
+let resourceSwapper;
 let rpc;
 let dir = __dirname;
-let funmode;
-while (!fs.existsSync(path.join(dir, 'omniverse')) && path.dirname(dir) !== dir)
-	dir = path.dirname(dir);
 
-const framerateConfigPath = path.join(dir, 'omniverse', 'src', "settings.json");
-if (fs.existsSync(framerateConfigPath)) {
+while (!fs.existsSync(path.join(dir, 'omniverse')) && path.dirname(dir) !== dir) dir = path.dirname(dir);
+
+const settingsPath = path.join(dir, 'omniverse', 'src', "settings.json");
+if (fs.existsSync(settingsPath)) {
 	try {
-		const config = JSON.parse(fs.readFileSync(framerateConfigPath, "utf-8"));
-
-		if (config.disableFrameRateLimit === true) {
-			app.commandLine.appendSwitch("disable-frame-rate-limit");
-		}
-
-		if (config.forceHighPerformanceGPU === true) {
-			app.commandLine.appendSwitch("force_high_performance_gpu");
-		}
-		if (config.funMode === true) {
-			funmode = true;
-		}
-
-		adblock = config.adblocker;
+		const config = JSON.parse(fs.readFileSync(settingsPath, "utf-8"));
+		if (config.disableFrameRateLimit) app.commandLine.appendSwitch("disable-frame-rate-limit"); // This usually makes the gameplay experience awful but kids like when FPS go up so whatever
+		if (config.forceHighPerformanceGPU) app.commandLine.appendSwitch("force_high_performance_gpu");
+		resourceSwapper = config.adblocker; // Adblocker would break the resource swapper so you could only have one or the other, now it doesn't but I can't be bothered to change the name
 		rpc = config.rpc;
 	} catch (err) {
-		console.error("Error parsing framerate.json:", err);
+		console.error("Error parsing settings.json:", err);
 	}
 }
 
-const clientId = "1426074176518881373";
-let rpcClient;
-
+// Shows Omniverse on the user's Discord status
 if (rpc) {
+	const clientId = "1426074176518881373";
+	let rpcClient;
 	try {
 		rpcClient = new RPC.Client({
 			transport: "ipc"
@@ -66,7 +55,7 @@ if (rpc) {
 				buttons: [{
 					label: "download",
 					url: "https://github.com/Typhoonz0/omniverse"
-				},],
+				}, ],
 			});
 		});
 
@@ -77,11 +66,11 @@ if (rpc) {
 		});
 	} catch (err) {
 		console.warn("Discord RPC initialization failed:", err.message);
-	}	
+	}
 }
 
+// Creates a window and executes the rest of the Javascript the client needs to
 const createWindow = () => {
-
 	const windowOptions = {
 		show: true,
 		title: "Deadshot.io",
@@ -89,19 +78,18 @@ const createWindow = () => {
 		webPreferences: {
 			nodeIntegration: true,
 			contextIsolation: false,
-			        webSecurity: false,            // ← allows loading file:// resources
+			webSecurity: false,
 			enableRemoteModule: true,
 			sandbox: false,
+			preload: path.join(__dirname, 'preload.js')
 		},
 	};
-	windowOptions.webPreferences.preload = path.join(__dirname, 'preload.js');
 
 	const gameWindow = new BrowserWindow(windowOptions);
 	gameWindow.setMenuBarVisibility(false);
 	gameWindow.loadURL("https://deadshot.io");
 
 	gameWindow.webContents.on("did-finish-load", () => {
-		// Inject script.js
 		const scriptPath = path.join(__dirname, "script.js");
 		if (fs.existsSync(scriptPath)) {
 			const code = fs.readFileSync(scriptPath, "utf8");
@@ -115,60 +103,61 @@ const createWindow = () => {
 	return gameWindow;
 };
 
+// Resource swapper, you need to edit resourceFilter if you want to switch out anything else
 app.whenReady().then(() => {
 	const gameWindow = createWindow();
-	if (adblock) {
-	protocol.handle("custom", async (req) => {
-		const relativePath = req.url.slice(7);
-		const localPath = path.join(__dirname, "swap", relativePath);
+	if (resourceSwapper) {
+		protocol.handle("custom", async (req) => {
+			const relativePath = req.url.slice(7);
+			const localPath = path.join(__dirname, "swap", relativePath);
 
-		try {
-			const fileData = await fs.promises.readFile(localPath);
-			return new Response(fileData, {
-				headers: {
-					"Content-Type": "image/webp",
-				},
-			});
-		} catch (err) {
-			console.error(`Could not read file: ${localPath}`, err);
-			return new Response("Not Found", {
-				status: 404,
-			});
-		}
-	});
-
-	const resourceFilter = {
-		urls: [
-			"*://deadshot.io/weapons/awp/*.webp",
-			"*://deadshot.io/weapons/ar2/*.webp",
-			"*://deadshot.io/weapons/shotgun/*.webp",
-			"*://deadshot.io/weapons/vector/*.webp",
-			"*://deadshot.io/skins/compressed/*.webp",
-			"*://deadshot.io/promo/*.webp",
-			"*://deadshot.io/textures/*.webp",
-
-		],
-	};
-
-	gameWindow.webContents.session.webRequest.onBeforeRequest(
-		resourceFilter,
-		(reqDetails, next) => {
-			const filePath = path.join(
-				__dirname,
-				"swap",
-				new URL(reqDetails.url).pathname,
-			);
-			if (fs.existsSync(filePath)) {
-				next({
-					redirectURL: `custom://${new URL(reqDetails.url).pathname}`,
+			try {
+				const fileData = await fs.promises.readFile(localPath);
+				return new Response(fileData, {
+					headers: {
+						"Content-Type": "image/webp",
+					},
 				});
-			} else {
-				next({
-					cancel: false,
+			} catch (err) {
+				console.error(`Could not read file: ${localPath}`, err);
+				return new Response("Not Found", {
+					status: 404,
 				});
 			}
-		},
-	);
+		});
+
+		const resourceFilter = {
+			urls: [
+				"*://deadshot.io/weapons/awp/*.webp",
+				"*://deadshot.io/weapons/ar2/*.webp",
+				"*://deadshot.io/weapons/shotgun/*.webp",
+				"*://deadshot.io/weapons/vector/*.webp",
+				"*://deadshot.io/skins/compressed/*.webp",
+				"*://deadshot.io/promo/*.webp",
+				"*://deadshot.io/textures/*.webp",
+
+			],
+		};
+
+		gameWindow.webContents.session.webRequest.onBeforeRequest(
+			resourceFilter,
+			(reqDetails, next) => {
+				const filePath = path.join(
+					__dirname,
+					"swap",
+					new URL(reqDetails.url).pathname,
+				);
+				if (fs.existsSync(filePath)) {
+					next({
+						redirectURL: `custom://${new URL(reqDetails.url).pathname}`,
+					});
+				} else {
+					next({
+						cancel: false,
+					});
+				}
+			},
+		);
 	}
 
 });

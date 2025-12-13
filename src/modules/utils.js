@@ -2,7 +2,7 @@ const utils = {
     set(key, value) {
         try {
             localStorage.setItem(key, JSON.stringify(value));
-        } catch {}
+        } catch { }
     },
     get(key, defaultVal = null) {
         try {
@@ -15,7 +15,7 @@ const utils = {
     setRaw(key, value) {
         try {
             localStorage.setItem(key, value);
-        } catch {}
+        } catch { }
     },
     getRaw(key, defaultVal = null) {
         try {
@@ -28,7 +28,7 @@ const utils = {
     remove(key) {
         try {
             localStorage.removeItem(key);
-        } catch {}
+        } catch { }
     },
     loadPosition(key) {
         return utils.get(`${key}_pos`, null);
@@ -47,18 +47,32 @@ const utils = {
     },
     el(tag, opts = {}) {
         const e = document.createElement(tag);
-        if (opts.id) e.id = opts.id;
-        if (opts.cls) e.className = opts.cls;
+
+        if (opts.id !== undefined) e.id = opts.id;
+        if (opts.cls !== undefined) e.className = opts.cls;
+
         if (opts.html !== undefined) e.innerHTML = opts.html;
         if (opts.text !== undefined) e.textContent = opts.text;
+
         if (opts.attrs) {
-            for (const [k, v] of Object.entries(opts.attrs)) e.setAttribute(k, v);
+            for (const [k, v] of Object.entries(opts.attrs)) {
+                e.setAttribute(k, v);
+            }
         }
+
         if (opts.style) {
             Object.assign(e.style, opts.style);
         }
+
+        if (opts.listeners) {
+            for (const [event, handler] of Object.entries(opts.listeners)) {
+                e.addEventListener(event, handler);
+            }
+        }
+
         return e;
     },
+
     makeDraggable(targetEl, opts = {}) {
         // opts: storageKey (string) - key to save pos, handle (Element) - optional handle element to start drag,
         // onSave: callback(pos) optional
@@ -67,7 +81,7 @@ const utils = {
         let offsetY = 0;
         const handle = opts.handle || targetEl;
         const storageKey = opts.storageKey || targetEl.id || null;
-        const onSave = opts.onSave || (() => {});
+        const onSave = opts.onSave || (() => { });
 
         function start(e) {
             // only left mouse button or touch
@@ -121,7 +135,7 @@ const utils = {
                     targetEl.style.left = pos.x + 'px';
                     targetEl.style.top = pos.y + 'px';
                     targetEl.style.right = 'auto';
-                } catch {}
+                } catch { }
             }
         }
 
@@ -156,10 +170,10 @@ const utils = {
         } catch {
             theme = { ...themes.default };
             currentPreset = 'default';
-        } 
+        }
         return theme, themes, currentPreset;
     },
-    
+
     OSInfo() {
         return navigator.platform ? `${navigator.platform}` : 'N/A';
     }

@@ -1,0 +1,121 @@
+:root {
+	--ov-accent: ${settings.themeData?.accent || '#8da4ff'};
+	--ov-bg: rgba(12, 12, 12, ${settings.themeData?.bgOpacity || 0.6});
+	--ov-panel: rgba(0, 0, 0, 0.45);
+	--ov-text: #ebf0ff
+}
+
+#ovGui {
+	position: fixed;
+	left: 24px;
+	top: 24px;
+	width: 340px;
+	border-radius: 12px;
+	border: 2px solid var(--ov-accent);
+	background: var(--ov-bg);
+	color: var(--ov-text);
+	z-index: 999999;
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6)
+}
+
+#ovGui header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 12px;
+	background: var(--ov-panel);
+	border-top-left-radius: 10px;
+	border-top-right-radius: 10px;
+	cursor: grab
+}
+
+#ovGui .wrap {
+	display: flex
+}
+
+#ovGui .tabs {
+	width: 130px;
+	background: var(--ov-panel);
+	display: flex;
+	flex-direction: column;
+	border-right: 1px solid rgba(255, 255, 255, 0.03)
+}
+
+#ovGui .tab {
+	padding: 8px 10px;
+	cursor: pointer;
+	color: #cfd7ff;
+	border-left: 3px solid transparent
+}
+
+#ovGui .tab.active {
+	background: transparent;
+	color: #fff;
+	border-left: 3px solid var(--ov-accent)
+}
+
+#ovGui .content {
+	flex: 1;
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	max-height: 540px;
+	overflow: auto
+}
+
+.ov-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px
+}
+
+.ov-row label {
+	flex: 1
+}
+
+.ov-btn {
+	padding: 6px 8px;
+	border-radius: 6px;
+	border: none;
+	background: var(--ov-accent);
+	color: #031133;
+	cursor: pointer
+}
+
+.ov-input {
+	padding: 6px;
+	border-radius: 6px;
+	border: 1px solid rgba(255, 255, 255, 0.06);
+	background: transparent;
+	color: var(--ov-text)
+}
+
+.ov-select {
+	padding: 6px;
+	border-radius: 6px
+}
+
+.ov-toggle {
+	width: 44px;
+	height: 22px;
+	border-radius: 22px;
+	background: rgba(255, 255, 255, 0.12);
+	position: relative;
+	cursor: pointer
+}
+
+.ov-toggle .knob {
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: #fff;
+	transition: transform 0.18s
+}
+
