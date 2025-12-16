@@ -835,6 +835,11 @@ function GUI(utils) {
 	ensureOverlays();
 	updateCrosshair();
 	updateGif();
+	addEventListener('keydown', (e) => {
+	if (e.key.toLowerCase() === (settings.toggleKey || 'o').toLowerCase()) {
+		gui.style.display = gui.style.display === 'none' ? '' : 'none';
+	}});
 }
+
 
 module.exports = { GUI }
