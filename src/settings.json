@@ -4,22 +4,20 @@
   "showStats": true,
   "crossEnable": true,
   "crossColor": "#ff0000",
-  "crossSize": 30,
-  "crossThickness": 4,
-  "crossType": "CircleWithDot",
+  "crossSize": 14,
+  "crossThickness": 2,
+  "crossType": "XShaped",
   "showAnimeGif": true,
   "animeGifPath": "",
-  "animeGifScale": 0.35,
-  "theme": "default",
+  "animeGifScale": 0.25,
   "themeData": {
     "accent": "#8da4ff",
-    "bgOpacity": 0.8
+    "text1": "#fafafa",
+    "bgOpacity": 0.65
   },
-  "funMode": false,
-  "rainbow": false,
   "disableFrameRateLimit": false,
   "forceHighPerformanceGPU": false,
-  "adblocker": true,
+  "swapper": true,
   "rpc": false,
   "animeGifSize": 100
 }

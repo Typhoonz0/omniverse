@@ -45,30 +45,22 @@ function resolveBase(startDir) {
 base = resolveBase(__dirname);
 
 const utils = require(path.join(base, 'modules', 'utils.js'));
-const themes = require(path.join(base, 'themes.json'));
 const { StatsOverlay } = require(path.join(base, 'modules', 'stats.js'));
 const { KeysOverlay } = require(path.join(base, 'modules', 'keysoverlay.js'));
-const { GUI } = require(path.join(base, 'modules', 'gui.js')); // Gui is created on import, lol
+const { GUI } = require(path.join(base, 'modules', 'gui.js')); 
 
-let themeRaw = utils.getRaw('theme');
-let theme;
-let currentPreset;
+const settingsPath = path.join(base, "settings.json");
 
-try {
-    if (!themeRaw) {
-        theme = { ...themes.default };
-        currentPreset = 'default';
-    } else if (themes[themeRaw]) {
-        theme = { ...themes[themeRaw] };
-        currentPreset = themeRaw;
-    } else {
-        theme = JSON.parse(themeRaw);
-        currentPreset = 'custom';
+function readSettings() {
+    try {
+        if (!fs.existsSync(settingsPath)) return {};
+        return JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+    } catch {
+        return {};
     }
-} catch {
-    theme = { ...themes.default };
-    currentPreset = 'default';
 }
+
+let theme = readSettings().themeData;
 
 utils.injectStyle(`
 @import 'https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap';
@@ -104,7 +96,7 @@ Object.assign(watermark.style, {
     left: '8px',
     opacity: '0.3',
     color: '#fff',
-    fontSize: '20px',
+    fontSize: '15px',
     zIndex: '999999',
     pointerEvents: 'none',
     userSelect: 'none',

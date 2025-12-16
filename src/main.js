@@ -16,17 +16,43 @@ const fs = require("fs");
 
 let resourceSwapper;
 let rpc;
-let dir = __dirname;
 
-while (!fs.existsSync(path.join(dir, 'omniverse')) && path.dirname(dir) !== dir) dir = path.dirname(dir);
+// Checks a few locations for the rest of the code as path.dirname and __dirname by default is different on the compiled release and the interpreted release 
+// This is an Electron issue and i can't fix it
+// This function would go in utils.js as it will belong in multiple files but I can't find utils.js without it 
+function resolveBase(startDir) {
+	function findFolder(dir, name) {
+		while (!fs.existsSync(path.join(dir, name)) && path.dirname(dir) !== dir) {
+			dir = path.dirname(dir);
+		}
+		return fs.existsSync(path.join(dir, name)) ?
+			path.join(dir, name) :
+			null;
+	}
 
-const settingsPath = path.join(dir, 'omniverse', 'src', "settings.json");
+	let omniversePath =
+		findFolder(startDir, "omniverse") ||
+		findFolder(startDir, "app") ||
+		findFolder(startDir, "src");
+
+	if (!omniversePath) {
+		console.error('Neither "omniverse", "app", nor "src" was found!');
+		return null;
+	}
+
+	return omniversePath;
+}
+omniversePath = resolveBase(__dirname);
+
+
+const settingsPath = path.join(omniversePath, 'src', "settings.json");
+
 if (fs.existsSync(settingsPath)) {
 	try {
 		const config = JSON.parse(fs.readFileSync(settingsPath, "utf-8"));
 		if (config.disableFrameRateLimit) app.commandLine.appendSwitch("disable-frame-rate-limit"); // This usually makes the gameplay experience awful but kids like when FPS go up so whatever
 		if (config.forceHighPerformanceGPU) app.commandLine.appendSwitch("force_high_performance_gpu");
-		resourceSwapper = config.adblocker; // Adblocker would break the resource swapper so you could only have one or the other, now it doesn't but I can't be bothered to change the name
+		resourceSwapper = config.swapper;
 		rpc = config.rpc;
 	} catch (err) {
 		console.error("Error parsing settings.json:", err);
@@ -73,7 +99,7 @@ if (rpc) {
 const createWindow = () => {
 	const windowOptions = {
 		show: true,
-		title: "Deadshot.io",
+		title: "Omniverse",
 		fullscreen: false,
 		webPreferences: {
 			nodeIntegration: true,
@@ -92,6 +118,7 @@ const createWindow = () => {
 	gameWindow.webContents.on("did-finish-load", () => {
 		const scriptPath = path.join(__dirname, "script.js");
 		if (fs.existsSync(scriptPath)) {
+			console.log("If the error is 'An object could not be cloned' that doesn't affect us.")
 			const code = fs.readFileSync(scriptPath, "utf8");
 			gameWindow.webContents
 				.executeJavaScript(code)
@@ -99,13 +126,14 @@ const createWindow = () => {
 				.catch((err) => console.error("Failed to inject script.js", err));
 		}
 	});
-
+	
 	return gameWindow;
 };
 
 // Resource swapper, you need to edit resourceFilter if you want to switch out anything else
 app.whenReady().then(() => {
 	const gameWindow = createWindow();
+
 	if (resourceSwapper) {
 		protocol.handle("custom", async (req) => {
 			const relativePath = req.url.slice(7);
@@ -128,14 +156,15 @@ app.whenReady().then(() => {
 
 		const resourceFilter = {
 			urls: [
-				"*://deadshot.io/weapons/awp/*.webp",
-				"*://deadshot.io/weapons/ar2/*.webp",
-				"*://deadshot.io/weapons/shotgun/*.webp",
-				"*://deadshot.io/weapons/vector/*.webp",
-				"*://deadshot.io/skins/compressed/*.webp",
-				"*://deadshot.io/promo/*.webp",
-				"*://deadshot.io/textures/*.webp",
-
+				"*://deadshot.io/weapons/awp/*.*",
+				"*://deadshot.io/weapons/ar2/*.*",
+				"*://deadshot.io/weapons/shotgun/*.*",
+				"*://deadshot.io/weapons/vector/*.*",
+				"*://deadshot.io/skins/compressed/*.*",
+				"*://deadshot.io/promo/*.*",
+				"*://deadshot.io/textures/*.*",
+				"*://deadshot.io/character/*.*",
+				"*://deadshot.io/maps/*.*",
 			],
 		};
 

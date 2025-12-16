@@ -8,7 +8,7 @@
 <div align="center">
   <img src="github/image.png" height="250">
   <br>
-  <i>Preview of Omniverse 0.75</i> 
+  <i>Preview of Omniverse 0.78's Default Config</i> 
 </div>
 
 ## DO NOT DISTRIBUTE WITHOUT CREDIT
@@ -26,7 +26,7 @@ npm start
 - [x] Keys Overlay - WASD C, R, Left/Right click 
 - [x] PC Stats - Just FPS + Ping or with Platform + CPU Cores
 - [x] Gun skin swapper 
-- [x] Rainbow character
+- [x] Uses half the RAM of Quasar
 - [x] Customizable UI
 - [x] Leaderboard scraper
 - [x] Auto Fullscreen

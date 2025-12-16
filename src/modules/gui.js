@@ -78,7 +78,13 @@ function GUI(utils) {
 		CircleWithDot: (s, c, t) => `
             <div style="position:relative;width:${s}px;height:${s}px;border:${t}px solid ${c};border-radius:50%;">
                 <div style="position:absolute;top:50%;left:50%;width:${s / 5}px;height:${s / 5}px;background:${c};border-radius:50%;transform:translate(-50%,-50%);"></div>
-            </div>`
+            </div>`,
+
+        XShaped: (s, c, t) => `
+            <div style="position:relative;width:${s}px;height:${s}px;">
+                <div style="position:absolute;width:${t}px;height:100%;background:${c};transform:rotate(45deg);left:50%;top:0;transform-origin:center;"></div>
+                <div style="position:absolute;width:${t}px;height:100%;background:${c};transform:rotate(-45deg);left:50%;top:0;transform-origin:center;"></div>
+            </div>`,
 	};
 
 	const gui = utils.el('div', {
@@ -123,7 +129,7 @@ function GUI(utils) {
 		label: 'Settings'
 	}, {
 		id: 'debug',
-		label: 'Debug'
+		label: 'Other'
 	}];
 	let activeTab = 'main';
 
@@ -192,9 +198,8 @@ function GUI(utils) {
 			contentEl.appendChild(utils.el('div', {
 				html: '<strong>Quick Controls</strong>'
 			}));
-			const {
-				row: r1
-			} = rowLabel('Show Keys Overlay');
+
+			const { row: r1 } = rowLabel('Show Keys Overlay');
 			const t1 = makeToggle(settings.showOverlay, v => {
 				settings.showOverlay = v;
 				save();
@@ -202,16 +207,37 @@ function GUI(utils) {
 			});
 			r1.appendChild(t1);
 			contentEl.appendChild(r1);
-			const {
-				row: r2
-			} = rowLabel('Resource Swapper (Reload Client)');
-			const t2 = makeToggle(settings.adblocker, v => {
-				settings.adblocker = v;
+
+			const { row: r2 } = rowLabel('Resource Swapper (Reload Client)');
+			const t2 = makeToggle(settings.swapper, v => {
+				settings.swapper = v;
 				save();
 			});
 			r2.appendChild(t2);
 			contentEl.appendChild(r2);
+
+			// --- Get Rank button ---
+			const rankRow = utils.el('div', { cls: 'ov-row' });
+			rankRow.appendChild(utils.el('label', { text: 'Player Rank' }));
+
+			const rankBtn = utils.el('button', {
+				text: 'Get Rank',
+				cls: 'ov-btn',
+				listeners: {
+					click: () => {
+						if (typeof getRank === 'function') {
+							getRank();
+						} else {
+							console.warn('getRank() is not defined');
+						}
+					}
+				}
+			});
+
+			rankRow.appendChild(rankBtn);
+			contentEl.appendChild(rankRow);
 		}
+
 
 		if (activeTab === 'keys') {
 			const {
@@ -225,37 +251,37 @@ function GUI(utils) {
 			r2.appendChild(t2);
 			contentEl.appendChild(r2);
 			[{
-					label: "Show Date",
-					key: "showDate"
-				},
-				{
-					label: "Show Time",
-					key: "showTime"
-				},
-				{
-					label: "Show OS",
-					key: "showOS"
-				},
-				{
-					label: "Show CPU",
-					key: "showCPU"
-				},
-				{
-					label: "Show Server",
-					key: "showServer"
-				},
-				{
-					label: "Show Sens",
-					key: "showSens"
-				},
-				{
-					label: "Show FPS",
-					key: "showFPS"
-				},
-				{
-					label: "Show Ping",
-					key: "showPing"
-				}
+				label: "Show Date",
+				key: "showDate"
+			},
+			{
+				label: "Show Time",
+				key: "showTime"
+			},
+			{
+				label: "Show OS",
+				key: "showOS"
+			},
+			{
+				label: "Show CPU",
+				key: "showCPU"
+			},
+			{
+				label: "Show Server",
+				key: "showServer"
+			},
+			{
+				label: "Show Sens",
+				key: "showSens"
+			},
+			{
+				label: "Show FPS",
+				key: "showFPS"
+			},
+			{
+				label: "Show Ping",
+				key: "showPing"
+			}
 			].forEach(opt => {
 				const {
 					row
@@ -369,9 +395,6 @@ function GUI(utils) {
 			});
 			typeRow.appendChild(sel);
 			contentEl.appendChild(typeRow);
-			contentEl.appendChild(utils.el('div', {
-				html: '<em>Preview</em>'
-			}));
 			updateCrosshair();
 		}
 
@@ -391,26 +414,7 @@ function GUI(utils) {
 				updateGif();
 			}));
 			contentEl.appendChild(sRow);
-			const pathRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			pathRow.appendChild(utils.el('label', {
-				text: 'GIF Path / URL'
-			}));
-			const pathInp = utils.el('input', {
-				cls: 'ov-input',
-				attrs: {
-					type: 'text',
-					value: settings.animeGifPath || ''
-				}
-			});
-			pathInp.addEventListener('change', e => {
-				settings.animeGifPath = e.target.value;
-				save();
-				updateGif();
-			});
-			pathRow.appendChild(pathInp);
-			contentEl.appendChild(pathRow);
+
 			const scaleRow = utils.el('div', {
 				cls: 'ov-row'
 			});
@@ -433,9 +437,6 @@ function GUI(utils) {
 			});
 			scaleRow.appendChild(scaleRange);
 			contentEl.appendChild(scaleRow);
-			contentEl.appendChild(utils.el('div', {
-				html: '<em>Local file paths work in desktop runs; otherwise provide a URL.</em>'
-			}));
 		}
 
 		if (activeTab === 'theme') {
@@ -462,6 +463,26 @@ function GUI(utils) {
 			});
 			accRow.appendChild(accInp);
 			contentEl.appendChild(accRow);
+			const textRow = utils.el('div', {
+				cls: 'ov-row'
+			});
+			textRow.appendChild(utils.el('label', {
+				text: 'Overlay Text Color (Reload Client)'
+			}));
+			const textInp = utils.el('input', {
+				attrs: {
+					type: 'color',
+					value: settings.themeData?.text1 || '#8da4ff'
+				}
+			});
+			textInp.addEventListener('input', e => {
+				settings.themeData = settings.themeData || {};
+				settings.themeData.text1 = e.target.value;
+				applyTheme(settings.themeData);
+				save();
+			});
+			textRow.appendChild(textInp);
+			contentEl.appendChild(textRow);
 			const bgRow = utils.el('div', {
 				cls: 'ov-row'
 			});
@@ -584,7 +605,7 @@ function GUI(utils) {
 	if (settings.themeData) applyTheme(settings.themeData);
 
 	let crossEl;
-	let	overlayEl;
+	let overlayEl;
 
 	function ensureOverlays() {
 		if (!crossEl) {
@@ -631,16 +652,16 @@ function GUI(utils) {
 
 	function updateGif() {
 		ensureOverlays();
-
+		console.log(settings.showAnimeGif);
 		const raw = settings.animeGifPath || "anime.gif";
 		const abs = path.isAbsolute(raw) ? raw : path.join(base, raw);
 
-		if (!settings.showAnimeGif || !fs.existsSync(abs)) return;
 
 		const full = "file:///" + abs.replace(/\\/g, "/");
 
 		const existing = document.getElementById("customGifEl");
 		if (existing) existing.remove();
+		if (!settings.showAnimeGif || !fs.existsSync(abs)) return;
 
 		const gifEl = document.createElement("div");
 		gifEl.id = "customGifEl";
@@ -679,13 +700,140 @@ function GUI(utils) {
 		writeSettings(settings);
 	}, 5000);
 
+	function isOverlaySupposedToBeOn() {
+		if (!settings.showOverlay) updateOverlay("keyDisplayOverlay")
+		if (!settings.showStats) updateOverlay("dsOverlayStats")
+	}
+	async function fetchLeaderboardRank(username) {
+
+		try {
+			const response = await fetch('https://login.deadshot.io/leaderboards');
+			const data = await response.json();
+			const categories = ["daily", "weekly", "alltime"];
+			const result = {};
+
+			for (const category of categories) {
+				if (data[category] && data[category].kills) {
+					const leaderboard = data[category].kills;
+					leaderboard.sort((a, b) => b.kills - a.kills);
+					const player = leaderboard.find(p => p.name === username);
+					result[category] = player ? `#${leaderboard.indexOf(player) + 1}` : "Not found";
+				} else {
+					result[category] = "Not found";
+				}
+
+			}
+			return `Daily: ${result.daily}\nWeekly: ${result.weekly}\nAll-time: ${result.alltime}`;
+		} catch (error) {
+			console.error('Error fetching leaderboard:', error);
+			return "Daily: Error\nWeekly: Error\nAll-time: Error";
+		}
+	}
+	function getRank() {
+		const overlay = document.createElement('div');
+		overlay.style.cssText = `
+			position: fixed;
+			inset: 0;
+			width: 100vw;
+			height: 100vh;
+			background: rgba(0,0,0,0.6);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			z-index: 9999;
+		`;
+
+		const box = document.createElement('div');
+		box.style.cssText = `
+			background: #1e1e1e;
+			padding: 30px;
+			border-radius: 12px;
+			box-shadow: 0 0 20px rgba(0,0,0,0.5);
+			text-align: center;
+			color: ${theme.text1};
+			min-width: 260px;
+		`;
+
+		const label = document.createElement('div');
+		label.textContent = 'Enter your username:';
+		label.style.cssText = `
+			margin-bottom: 10px;
+			font-size: 15px;
+			opacity: 0.9;
+		`;
+
+		const input = document.createElement('input');
+		input.type = 'text';
+		input.style.cssText = `
+			padding: 10px;
+			border-radius: 6px;
+			border: none;
+			width: 100%;
+			max-width: 220px;
+			margin-bottom: 12px;
+			font-size: 16px;
+			outline: none;
+		`;
+
+		const submit = document.createElement('button');
+		submit.textContent = 'Submit';
+		submit.style.cssText = `
+			padding: 10px 22px;
+			border: none;
+			border-radius: 6px;
+			background: #4CAF50;
+			color: ${theme.text1};
+			cursor: pointer;
+			font-size: 16px;
+			transition: background 0.15s ease, transform 0.05s ease;
+		`;
+
+		submit.addEventListener('mouseenter', () => {
+			submit.style.background = '#43a047';
+		});
+
+		submit.addEventListener('mouseleave', () => {
+			submit.style.background = '#4CAF50';
+		});
+
+		submit.addEventListener('mousedown', () => {
+			submit.style.transform = 'scale(0.97)';
+		});
+
+		submit.addEventListener('mouseup', () => {
+			submit.style.transform = 'scale(1)';
+		});
+
+		submit.addEventListener('click', async () => {
+			const username = input.value.trim();
+			if (!username) return;
+
+			try {
+				const rank = await fetchLeaderboardRank(username);
+				alert(`${rank}`);
+				document.body.removeChild(overlay);
+			} catch (err) {
+				console.error('Failed to fetch leaderboard rank:', err);
+				alert('Failed to fetch rank');
+				document.body.removeChild(overlay);
+			}
+		});
+
+		box.appendChild(label);
+		box.appendChild(input);
+		box.appendChild(submit);
+		overlay.appendChild(box);
+		document.body.appendChild(overlay);
+		input.focus();
+	}
+
 	createTabs();
 	renderContent();
+	isOverlaySupposedToBeOn();
 	document.body.appendChild(gui);
 	utils.makeDraggable(gui);
 	ensureOverlays();
 	updateCrosshair();
-	updateOverlay();
 	updateGif();
 }
 
