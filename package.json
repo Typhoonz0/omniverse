@@ -5,17 +5,15 @@
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
-    "dist-win": "electron-packager . omniverse --platform=win32 --arch=x64 --out=../omniverse-dist --overwrite",
-    "dist-linux": "electron-packager . omniverse --platform=linux --arch=x64 --out=dist --overwrite"
+    "dist-win": "electron-packager . omniverse --platform=win32 --arch=x64 --out=../omniverse-dist --overwrite --no-asar",
+    "dist-linux": "electron-packager . omniverse --platform=linux --arch=x64 --out=dist --overwrite --no-asar"
   },
 
   "devDependencies": {
-    "electron": "^26.6.10",
-    "electron-packager": "^17.1.1"
+    "electron": "^38.7.2",
+    "@electron/packager": "^19.0.1"
   },
   "dependencies": {
-    "electron": "^26.6.10",
-    "electron-packager": "^17.1.1",
     "cross-fetch": "^4.1.0",
     "discord-rpc": "^4.0.1"
   }
