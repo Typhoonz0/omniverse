@@ -13,6 +13,10 @@ const { app, BrowserWindow, protocol } = require("electron");
 const RPC = require("discord-rpc");
 const path = require("path");
 const fs = require("fs");
+const { ElectronBlocker } = require('@ghostery/adblocker-electron');
+const fetch = require('cross-fetch');
+// for multiple listeners on session
+const betterWebRequest = require('electron-better-web-request');
 
 let resourceSwapper;
 let rpc;
@@ -106,8 +110,7 @@ const createWindow = () => {
 			contextIsolation: false,
 			webSecurity: false,
 			enableRemoteModule: true,
-			sandbox: false,
-			preload: path.join(__dirname, 'preload.js')
+			sandbox: false
 		},
 	};
 
@@ -133,6 +136,20 @@ const createWindow = () => {
 // Resource swapper, you need to edit resourceFilter if you want to switch out anything else
 app.whenReady().then(() => {
 	const gameWindow = createWindow();
+
+	// make it possible to have multiple listeners on session.webRequest.onBeforeRequest.
+	// this is needed because the adblocker adds a listener there and we also add a listener for the resource swapper.
+	betterWebRequest.default(gameWindow.webContents.session);
+	gameWindow.webContents.session.webRequest.setResolver('onBeforeRequest', async (listeners) => {
+		let finalResponse = { cancel: false };
+		
+		for (const listener of listeners) {
+			const result = await listener.apply();
+			finalResponse = { ...finalResponse, ...result };
+		}
+		
+		return finalResponse;
+    });
 
 	if (resourceSwapper) {
 		protocol.handle("custom", async (req) => {
@@ -188,6 +205,10 @@ app.whenReady().then(() => {
 			},
 		);
 	}
+
+	ElectronBlocker.fromPrebuiltAdsAndTracking(fetch).then((blocker) => {
+		blocker.enableBlockingInSession(gameWindow.webContents.session);
+	});
 
 });
 

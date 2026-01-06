@@ -15,6 +15,9 @@
   },
   "dependencies": {
     "cross-fetch": "^4.1.0",
-    "discord-rpc": "^4.0.1"
+    "discord-rpc": "^4.0.1",
+    "@ghostery/adblocker-electron": "^2.13.2",
+    "electron-better-web-request": "^1.0.1",
+    "tslib": "^2.8.1"
   }
 }
