@@ -113,6 +113,9 @@ function GUI(utils) {
 		id: 'main',
 		label: 'Main'
 	}, {
+		id: 'stats',
+		label: 'Stats'
+	}, {
 		id: 'keys',
 		label: 'Keys'
 	}, {
@@ -128,7 +131,7 @@ function GUI(utils) {
 		id: 'settings',
 		label: 'Settings'
 	}, {
-		id: 'debug',
+		id: 'other',
 		label: 'Other'
 	}];
 	let activeTab = 'main';
@@ -199,57 +202,90 @@ function GUI(utils) {
 				html: '<strong>Quick Controls</strong>'
 			}));
 
-			const { row: r1 } = rowLabel('Show Keys Overlay');
-			const t1 = makeToggle(settings.showOverlay, v => {
-				settings.showOverlay = v;
-				save();
-				updateOverlay("keyDisplayOverlay");
+			const resRow = utils.el('div', {
+				cls: 'ov-row'
 			});
-			r1.appendChild(t1);
-			contentEl.appendChild(r1);
-
-			const { row: r2 } = rowLabel('Resource Swapper (Reload Client)');
-			const t2 = makeToggle(settings.swapper, v => {
+			resRow.appendChild(utils.el('label', {
+				text: 'Resource Swapper (Reload Client)'
+			}));
+			resRow.appendChild(makeToggle(settings.swapper, v => {
 				settings.swapper = v;
 				save();
+			}));
+			contentEl.appendChild(resRow);
+
+			const statRow = utils.el('div', {
+				cls: 'ov-row'
 			});
-			r2.appendChild(t2);
-			contentEl.appendChild(r2);
-
-			// --- Get Rank button ---
-			const rankRow = utils.el('div', { cls: 'ov-row' });
-			rankRow.appendChild(utils.el('label', { text: 'Player Rank' }));
-
-			const rankBtn = utils.el('button', {
-				text: 'Get Rank',
-				cls: 'ov-btn',
-				listeners: {
-					click: () => {
-						if (typeof getRank === 'function') {
-							getRank();
-						} else {
-							console.warn('getRank() is not defined');
-						}
-					}
-				}
-			});
-
-			rankRow.appendChild(rankBtn);
-			contentEl.appendChild(rankRow);
-		}
-
-
-		if (activeTab === 'keys') {
-			const {
-				row: r2
-			} = rowLabel('Show Stats Overlay');
-			const t2 = makeToggle(settings.showStats, v => {
+			statRow.appendChild(utils.el('label', {
+				text: 'Stats Overlay'
+			}));
+			statRow.appendChild(makeToggle(settings.showStats, v => {
 				settings.showStats = v;
 				save();
 				updateOverlay("dsOverlayStats");
+			}));
+			contentEl.appendChild(statRow);
+
+			const keyRow = utils.el('div', {
+				cls: 'ov-row'
 			});
-			r2.appendChild(t2);
-			contentEl.appendChild(r2);
+			keyRow.appendChild(utils.el('label', {
+				text: 'Keys Overlay'
+			}));
+			keyRow.appendChild(makeToggle(settings.showOverlay, v => {
+				settings.showOverlay = v;
+				save();
+				updateOverlay("keyDisplayOverlay");
+			}));
+			contentEl.appendChild(keyRow);
+
+			const crossRow = utils.el('div', {
+				cls: 'ov-row'
+			});
+			crossRow.appendChild(utils.el('label', {
+				text: 'Crosshair'
+			}));
+			crossRow.appendChild(makeToggle(settings.crossEnable, v => {
+				settings.crossEnable = v;
+				save();
+				updateCrosshair();
+			}));
+			contentEl.appendChild(crossRow);
+
+			const gifRow = utils.el('div', {
+				cls: 'ov-row'
+			});
+			gifRow.appendChild(utils.el('label', {
+				text: 'GIF'
+			}));
+			gifRow.appendChild(makeToggle(settings.showAnimeGif, v => {
+				settings.showAnimeGif = v;
+				save();
+				updateGif();
+			}));
+			contentEl.appendChild(gifRow);
+
+		}
+
+		if (activeTab === 'stats') {
+			contentEl.appendChild(utils.el('div', {
+				html: '<strong>Stats Overlay</strong>'
+			}));
+
+			const enRow = utils.el('div', {
+				cls: 'ov-row'
+			});
+			enRow.appendChild(utils.el('label', {
+				text: 'Enable'
+			}));
+			enRow.appendChild(makeToggle(settings.showStats, v => {
+				settings.showStats = v;
+				save();
+				updateOverlay("dsOverlayStats");
+			}));
+			contentEl.appendChild(enRow);
+
 			[{
 				label: "Show Date",
 				key: "showDate"
@@ -283,15 +319,78 @@ function GUI(utils) {
 				key: "showPing"
 			}
 			].forEach(opt => {
-				const {
-					row
-				} = rowLabel(opt.label);
-				const toggle = makeToggle(utils.getRaw(opt.key) !== "false", v => {
-					utils.setRaw(opt.key, v);
+
+				const row = utils.el('div', {
+					cls: 'ov-row'
 				});
-				row.appendChild(toggle);
+				row.appendChild(utils.el('label', {
+					text: opt.label
+				}));
+				row.appendChild(makeToggle(utils.getRaw(opt.key) !== "false", v => {
+					utils.setRaw(opt.key, v);
+				}));
 				contentEl.appendChild(row);
+
 			});
+		}
+
+		if (activeTab === 'keys') {
+			contentEl.appendChild(utils.el('div', {
+				html: '<strong>Keys Overlay</strong>'
+			}));
+
+			const enRow = utils.el('div', {
+				cls: 'ov-row'
+			});
+			enRow.appendChild(utils.el('label', {
+				text: 'Enable'
+			}));
+			enRow.appendChild(makeToggle(settings.showOverlay, v => {
+				settings.showOverlay = v;
+				save();
+				updateOverlay("keyDisplayOverlay");
+			}));
+			contentEl.appendChild(enRow);
+
+			const movRow = utils.el('div', {
+				cls: 'ov-row'
+			});
+			movRow.appendChild(utils.el('label', {
+				text: 'Movement Keys Color (Reload Client)'
+			}));
+			const movInp = utils.el('input', {
+				attrs: {
+					type: 'color',
+					value: settings.themeData?.red1 || '#8da4ff'
+				}
+			});
+			movInp.addEventListener('input', e => {
+				settings.themeData = settings.themeData || {};
+				settings.themeData.red1 = e.target.value;
+				save();
+			});
+			movRow.appendChild(movInp);
+			contentEl.appendChild(movRow);
+
+			const actRow = utils.el('div', {
+				cls: 'ov-row'
+			});
+			actRow.appendChild(utils.el('label', {
+				text: 'Actions Keys Color (Reload Client)'
+			}));
+			const actInp = utils.el('input', {
+				attrs: {
+					type: 'color',
+					value: settings.themeData?.red2 || '#8da4ff'
+				}
+			});
+			actInp.addEventListener('input', e => {
+				settings.themeData = settings.themeData || {};
+				settings.themeData.red2 = e.target.value;
+				save();
+			});
+			actRow.appendChild(actInp);
+			contentEl.appendChild(actRow);
 		}
 
 		if (activeTab === 'cross') {
@@ -581,18 +680,39 @@ function GUI(utils) {
 			contentEl.appendChild(r);
 		}
 
-		if (activeTab === 'debug') {
-			contentEl.appendChild(utils.el('div', {
-				html: '<strong>Debug</strong>'
-			}));
-			const dump = utils.el('button', {
+		if (activeTab === 'other') {
+
+			// --- Get Rank button ---
+			const rankRow = utils.el('div', { cls: 'ov-row' });
+			rankRow.appendChild(utils.el('label', { text: 'Player Rank' }));
+			const rankBtn = utils.el('button', {
+				text: 'Get Rank',
+				cls: 'ov-btn',
+				listeners: {
+					click: () => {
+						if (typeof getRank === 'function') {
+							getRank();
+						} else {
+							console.warn('getRank() is not defined');
+						}
+					}
+				}
+			});
+			rankRow.appendChild(rankBtn);
+			contentEl.appendChild(rankRow);
+
+			const debugRow = utils.el('div', { cls: 'ov-row' });
+			debugRow.appendChild(utils.el('label', { text: 'Debug' }));
+			const debugBtn = utils.el('button', {
 				text: 'Show State',
 				cls: 'ov-btn',
 				listeners: {
 					click: () => alert(JSON.stringify(settings, null, 2))
 				}
 			});
-			contentEl.appendChild(dump);
+			debugRow.appendChild(debugBtn);
+			contentEl.appendChild(debugRow);
+
 		}
 	}
 

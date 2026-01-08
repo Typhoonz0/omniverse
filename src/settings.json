@@ -13,7 +13,9 @@
   "themeData": {
     "accent": "#8da4ff",
     "text1": "#fafafa",
-    "bgOpacity": 0.65
+    "bgOpacity": 0.65,
+    "red1": "#2b2b2b",
+    "red2": "#2b2b2b"
   },
   "disableFrameRateLimit": false,
   "forceHighPerformanceGPU": false,
