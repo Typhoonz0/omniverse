@@ -1,13 +1,13 @@
 {
   "toggleKey": "o",
-  "showOverlay": true,
-  "showStats": true,
+  "showOverlay": false,
+  "showStats": false,
   "crossEnable": true,
-  "crossColor": "#ff0000",
+  "crossColor": "#ff4de7",
   "crossSize": 14,
   "crossThickness": 2,
-  "crossType": "XShaped",
-  "showAnimeGif": true,
+  "crossType": "Dot",
+  "showAnimeGif": false,
   "animeGifPath": "",
   "animeGifScale": 0.25,
   "themeData": {
@@ -19,5 +19,11 @@
   "forceHighPerformanceGPU": false,
   "swapper": true,
   "rpc": false,
-  "animeGifSize": 100
+  "animeGifSize": 100,
+  "selectedSkins": {
+    "ar": "matrix",
+    "smg": "default",
+    "awp": "default",
+    "shotgun": "default"
+  }
 }

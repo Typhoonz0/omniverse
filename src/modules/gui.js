@@ -109,6 +109,38 @@ function GUI(utils) {
 	wrap.appendChild(contentEl);
 	gui.appendChild(wrap);
 
+	// Skin options with lowercase keys and display names
+	const SKIN_OPTIONS = {
+		"default": "Default",
+		"bacon": "Bacon",
+		"linen": "Fresh Linen",
+		"greencamo": "Green Camo",
+		"redcamo": "Red Camo",
+		"tiger": "Tigris",
+		"carbon": "Carbon Fiber",
+		"cherry": "Blossom",
+		"prism": "Gem Stone",
+		"splatter": "Marble",
+		"swirl": "Swirl",
+		"vapor": "Vapor Wave",
+		"astro": "Astro",
+		"payday": "Pay Day",
+		"safari": "Safari",
+		"snowcamo": "Snow Camo",
+		"rustic": "Royal",
+		"hydro": "Hydrodip",
+		"ice": "Frostbite",
+		"silly": "Silly",
+		"alez": "Alez",
+		"horizon": "Horizon",
+		"quackster": "QuaK",
+		"matrix": "Matrix",
+		"neon": "Neon",
+		"winter": "Winter '22",
+		"hlwn": "HLWN '23",
+		"summer": "Summer '24",
+		"birthday": "1st Birthday"
+	};
 	const TABS = [{
 		id: 'main',
 		label: 'Main'
@@ -118,6 +150,10 @@ function GUI(utils) {
 	}, {
 		id: 'cross',
 		label: 'Crosshair'
+	},
+	 {
+		id: 'skins',
+		label: 'Skins'
 	}, {
 		id: 'gif',
 		label: 'GIF'
@@ -294,6 +330,63 @@ function GUI(utils) {
 			});
 		}
 
+		if (activeTab === 'skins') {
+			console.log('activeTab:', activeTab);
+
+			contentEl.appendChild(utils.el('div', {
+				html: '<strong>Skin Selector</strong>'
+			}));
+
+			// Note about reloading
+			const noteEl = utils.el('div', {
+				style: {
+					padding: '8px 12px',
+					background: 'rgba(255, 193, 7, 0.15)',
+					borderRadius: '6px',
+					marginBottom: '12px',
+					fontSize: '12px',
+					color: '#ffc107',
+					border: '1px solid rgba(255, 193, 7, 0.3)'
+				}
+			});
+			noteEl.textContent = '⚠️ Reload client to apply skin changes';
+			contentEl.appendChild(noteEl);
+
+			// Create dropdowns for each weapon type
+			const weapons = [
+				{ key: 'ar', label: 'Assault Rifle' },
+				{ key: 'smg', label: 'SMG' },
+				{ key: 'awp', label: 'AWP' },
+				{ key: 'shotgun', label: 'Shotgun' }
+			];
+
+			weapons.forEach(weapon => {
+				const row = utils.el('div', { cls: 'ov-row' });
+				row.appendChild(utils.el('label', { text: weapon.label }));
+
+				const select = utils.el('select', { cls: 'ov-select' });
+				
+				// Add all skin options
+				Object.entries(SKIN_OPTIONS).forEach(([value, displayName]) => {
+			
+					const option = utils.el('option', { text: displayName });
+					option.value = value;
+					if (settings.selectedSkins[weapon.key] === value) {
+						option.selected = true;
+					}
+					select.appendChild(option);
+				});
+
+				select.addEventListener('change', (e) => {
+					settings.selectedSkins[weapon.key] = e.target.value;
+					save();
+					console.log(`Selected ${weapon.label}: ${e.target.value}`);
+				});
+
+				row.appendChild(select);
+				contentEl.appendChild(row);
+			});
+		}
 		if (activeTab === 'cross') {
 			contentEl.appendChild(utils.el('div', {
 				html: '<strong>Crosshair Editor</strong>'

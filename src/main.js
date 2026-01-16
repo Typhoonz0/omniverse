@@ -106,6 +106,7 @@ const createWindow = () => {
 		title: "Omniverse",
 		fullscreen: false,
 		webPreferences: {
+			preload: path.join(__dirname, 'preload.js'),
 			nodeIntegration: true,
 			contextIsolation: false,
 			webSecurity: false,
@@ -133,25 +134,48 @@ const createWindow = () => {
 	return gameWindow;
 };
 
-// Resource swapper, you need to edit resourceFilter if you want to switch out anything else
+// Recursively search for a file by name
+function findFileRecursive(baseDir, targetName) {
+	const entries = fs.readdirSync(baseDir, { withFileTypes: true });
+
+	for (const entry of entries) {
+		const fullPath = path.join(baseDir, entry.name);
+
+		if (entry.isFile() && entry.name === targetName) {
+			return fullPath;
+		}
+
+		if (entry.isDirectory()) {
+			const result = findFileRecursive(fullPath, targetName);
+			if (result) return result;
+		}
+	}
+
+	return null;
+}
+
 app.whenReady().then(() => {
+
 	const gameWindow = createWindow();
 
-	// make it possible to have multiple listeners on session.webRequest.onBeforeRequest.
-	// this is needed because the adblocker adds a listener there and we also add a listener for the resource swapper.
+	// allow multiple onBeforeRequest listeners
 	betterWebRequest.default(gameWindow.webContents.session);
-	gameWindow.webContents.session.webRequest.setResolver('onBeforeRequest', async (listeners) => {
-		let finalResponse = { cancel: false };
-		
-		for (const listener of listeners) {
-			const result = await listener.apply();
-			finalResponse = { ...finalResponse, ...result };
-		}
-		
-		return finalResponse;
-    });
+	gameWindow.webContents.session.webRequest.setResolver(
+		"onBeforeRequest",
+		async (listeners) => {
+			let finalResponse = { cancel: false };
+
+			for (const listener of listeners) {
+				const result = await listener.apply();
+				finalResponse = { ...finalResponse, ...result };
+			}
+
+			return finalResponse;
+		},
+	);
 
 	if (resourceSwapper) {
+		// custom:// protocol handler
 		protocol.handle("custom", async (req) => {
 			const relativePath = req.url.slice(7);
 			const localPath = path.join(__dirname, "swap", relativePath);
@@ -159,48 +183,45 @@ app.whenReady().then(() => {
 			try {
 				const fileData = await fs.promises.readFile(localPath);
 				return new Response(fileData, {
-					headers: {
-						"Content-Type": "image/webp",
-					},
+					headers: { "Content-Type": "image/webp" },
 				});
-			} catch (err) {
-				console.error(`Could not read file: ${localPath}`, err);
-				return new Response("Not Found", {
-					status: 404,
-				});
+			} catch {
+				return new Response("Not Found", { status: 404 });
 			}
 		});
 
 		const resourceFilter = {
 			urls: [
-				"*://deadshot.io/weapons/awp/*.*",
-				"*://deadshot.io/weapons/ar2/*.*",
-				"*://deadshot.io/weapons/shotgun/*.*",
-				"*://deadshot.io/weapons/vector/*.*",
-				"*://deadshot.io/skins/compressed/*.*",
-				"*://deadshot.io/promo/*.*",
-				"*://deadshot.io/textures/*.*",
-				"*://deadshot.io/character/*.*",
-				"*://deadshot.io/maps/*.*",
+				"*://deadshot.io/weapons/*",
+				"*://deadshot.io/skins/*",
+				"*://deadshot.io/promo/*",
+				"*://deadshot.io/textures/*",
+				"*://deadshot.io/character/*",
+				"*://deadshot.io/maps/*",
 			],
 		};
 
 		gameWindow.webContents.session.webRequest.onBeforeRequest(
 			resourceFilter,
 			(reqDetails, next) => {
-				const filePath = path.join(
-					__dirname,
-					"swap",
-					new URL(reqDetails.url).pathname,
-				);
-				if (fs.existsSync(filePath)) {
+				const url = new URL(reqDetails.url);
+				const fileName = path.basename(url.pathname);
+				const swapRoot = path.join(__dirname, "swap");
+
+				let foundFile = null;
+
+				if (fs.existsSync(swapRoot)) {
+					foundFile = findFileRecursive(swapRoot, fileName);
+				}
+
+				if (foundFile) {
+					const relative = path.relative(swapRoot, foundFile);
+
 					next({
-						redirectURL: `custom://${new URL(reqDetails.url).pathname}`,
+						redirectURL: `custom://${relative.replace(/\\/g, "/")}`,
 					});
 				} else {
-					next({
-						cancel: false,
-					});
+					next({ cancel: false });
 				}
 			},
 		);
@@ -209,7 +230,6 @@ app.whenReady().then(() => {
 	ElectronBlocker.fromPrebuiltAdsAndTracking(fetch).then((blocker) => {
 		blocker.enableBlockingInSession(gameWindow.webContents.session);
 	});
-
 });
 
 app.on("window-all-closed", () => {
