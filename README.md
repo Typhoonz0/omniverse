@@ -10,7 +10,11 @@
   <br>
   <i>Preview of Omniverse 0.78's Default Config</i> 
 </div>
-
+<div align="center">
+  <img src="github/matrix-again.png" height="250">
+  <br>
+  <i>Yes, you can spoof matrix</i> 
+</div>
 ## DO NOT DISTRIBUTE WITHOUT CREDIT
 ## Download:
 https://github.com/Typhoonz0/omniverse/releases/
@@ -53,7 +57,7 @@ This is an Electron issue, try these steps and **restart the client** each time 
 
 Replace the example images inside the `swap/` directory, and reload  the client. Make sure the names are EXACTLY the same as below.
 
-On Windows, this is probably in `<omniverse folder location>/resources/app/swap` or `<omniverse folder location>/resources/omniverse/swap`
+This is in `<omniverse folder location>/resources/app/swap` or `<omniverse folder location>/src/swap`
 ```
 swap/
 └── weapons
@@ -66,5 +70,6 @@ swap/
     └── vector
         └── vectorcomp.webp
 ```
+
 
 
