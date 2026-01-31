@@ -39,7 +39,7 @@ npm start
 - [x] Discord RPC
 - [ ] Aimbot soon trust 
 
-## The UI is not coming up!
+## The UI is not coming up, or stuff just doesn't work!
 Happens a lot on windows try:
 - Running the app a second time
 - Renaming the root folder from 'omniverse-main' to simply 'omniverse'
@@ -71,6 +71,7 @@ swap/
     └── vector
         └── vectorcomp.webp
 ```
+
 
 
 
