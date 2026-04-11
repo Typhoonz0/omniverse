@@ -54,7 +54,7 @@ const settingsPath = path.join(omniversePath, 'src', "settings.json");
 if (fs.existsSync(settingsPath)) {
 	try {
 		const config = JSON.parse(fs.readFileSync(settingsPath, "utf-8"));
-		if (config.disableFrameRateLimit) app.commandLine.appendSwitch("disable-frame-rate-limit"); // This usually makes the gameplay experience awful but kids like when FPS go up so whatever
+		if (config.disableFrameRateLimit) app.commandLine.appendSwitch("disable-frame-rate-limit"); // This is usuable in newer versions of Chromium
 		if (config.forceHighPerformanceGPU) app.commandLine.appendSwitch("force_high_performance_gpu");
 		resourceSwapper = config.swapper;
 		rpc = config.rpc;
@@ -198,6 +198,7 @@ app.whenReady().then(() => {
 				"*://deadshot.io/textures/*",
 				"*://deadshot.io/character/*",
 				"*://deadshot.io/maps/*",
+				"*://deadshot.io/audio/*",
 			],
 		};
 
