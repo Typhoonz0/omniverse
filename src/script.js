@@ -6,7 +6,7 @@
 // DO NOT DISTRIBUTE WITHOUT CREDIT
 
 // CREDITS:
-// By xLiam1 | xliam.space
+// By xLiam1 | xliam.xyz
 
 const fs = require('fs');
 const path = require('path');
