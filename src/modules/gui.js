@@ -135,8 +135,13 @@ function GUI(utils) {
 		"horizon": "Horizon",
 		"quackster": "QuaK",
 		"matrix": "Matrix",
+		"scanline": "Scanline",
+		"frostyglow": "Frosty Glow",
+		"neonpulse": "Neon Pulse (not out yet)",
 		"neon": "Neon",
 		"winter": "Winter '22",
+		"winter2024": "Winter '24",
+		"hallow22": "HLWN '22",
 		"hlwn": "HLWN '23",
 		"summer": "Summer '24",
 		"birthday": "1st Birthday"
