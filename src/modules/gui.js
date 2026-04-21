@@ -93,7 +93,7 @@ function GUI(utils) {
 		}
 	});
 	const header = utils.el('header');
-	header.innerHTML = `<div style="font-weight:700">Omniverse | xliam.space</div><div style="opacity:0.9">Toggle: <span id="ov-toggle-key">${settings.toggleKey}</span></div>`;
+	header.innerHTML = `<div style="font-weight:700">Omniverse | xliam.xyz</div><div style="opacity:0.9">Toggle: <span id="ov-toggle-key">${settings.toggleKey}</span></div>`;
 	gui.appendChild(header);
 
 	const wrap = utils.el('div', {
@@ -242,7 +242,9 @@ function GUI(utils) {
 			contentEl.appendChild(utils.el('div', {
 				html: '<strong>Quick Controls</strong>'
 			}));
-
+			contentEl.appendChild(utils.el('div', {
+				html: '<strong>Check xliam.xyz for updates every week</strong>'
+			}));
 			const resRow = utils.el('div', {
 				cls: 'ov-row'
 			});
@@ -253,7 +255,31 @@ function GUI(utils) {
 				settings.swapper = v;
 				save();
 			}));
-			contentEl.appendChild(resRow);
+
+			const fullscreenRow = utils.el('div', {
+				cls: 'ov-row'
+			});
+			fullscreenRow.appendChild(utils.el('label', {
+				text: 'Open in fullscreen'
+			}));
+			fullscreenRow.appendChild(makeToggle(settings.largewindow, v => {
+				settings.largewindow = v;
+				save();
+			}));
+			contentEl.appendChild(fullscreenRow);
+
+			const upcapFPSRow = utils.el('div', {
+				cls: 'ov-row'
+			});
+			upcapFPSRow.appendChild(utils.el('label', {
+				text: 'Uncap FPS'
+			}));
+			upcapFPSRow.appendChild(makeToggle(settings.disableFrameRateLimit, v => {
+				settings.disableFrameRateLimit = v;
+				settings.forceHighPerformanceGPU = v;
+				save();
+			}));
+			contentEl.appendChild(upcapFPSRow);
 
 			const statRow = utils.el('div', {
 				cls: 'ov-row'

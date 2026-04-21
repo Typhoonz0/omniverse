@@ -4,7 +4,7 @@
   "showStats": false,
   "crossEnable": true,
   "crossColor": "#ff4de7",
-  "crossSize": 14,
+  "crossSize": 4,
   "crossThickness": 2,
   "crossType": "Dot",
   "showAnimeGif": false,
@@ -17,13 +17,14 @@
     "red1": "#2b2b2b",
     "red2": "#2b2b2b"
   },
-  "disableFrameRateLimit": false,
-  "forceHighPerformanceGPU": false,
+  "largewindow": false,
+  "disableFrameRateLimit": true,
+  "forceHighPerformanceGPU": true,
   "swapper": true,
   "rpc": false,
   "animeGifSize": 100,
   "selectedSkins": {
-    "ar": "matrix",
+    "ar": "default",
     "smg": "default",
     "awp": "default",
     "shotgun": "default"

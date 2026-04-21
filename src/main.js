@@ -54,10 +54,11 @@ const settingsPath = path.join(omniversePath, 'src', "settings.json");
 if (fs.existsSync(settingsPath)) {
 	try {
 		const config = JSON.parse(fs.readFileSync(settingsPath, "utf-8"));
-		if (config.disableFrameRateLimit) app.commandLine.appendSwitch("disable-frame-rate-limit"); // This is usuable in newer versions of Chromium
+		if (config.disableFrameRateLimit) app.commandLine.appendSwitch("disable-frame-rate-limit"); // This usually makes the gameplay experience awful but kids like when FPS go up so whatever
 		if (config.forceHighPerformanceGPU) app.commandLine.appendSwitch("force_high_performance_gpu");
 		resourceSwapper = config.swapper;
 		rpc = config.rpc;
+		largewindow = config.largewindow;
 	} catch (err) {
 		console.error("Error parsing settings.json:", err);
 	}
@@ -104,7 +105,7 @@ const createWindow = () => {
 	const windowOptions = {
 		show: true,
 		title: "Omniverse",
-		fullscreen: false,
+		fullscreen: largewindow,
 		webPreferences: {
 			preload: path.join(__dirname, 'preload.js'),
 			nodeIntegration: true,
@@ -198,7 +199,6 @@ app.whenReady().then(() => {
 				"*://deadshot.io/textures/*",
 				"*://deadshot.io/character/*",
 				"*://deadshot.io/maps/*",
-				"*://deadshot.io/audio/*",
 			],
 		};
 
