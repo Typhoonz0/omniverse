@@ -1,3 +1,11 @@
+@import 'https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap';
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'DM Sans', sans-serif;
+}
+
 :root {
 	--ov-accent: ${settings.themeData?.accent || '#8da4ff'};
 	--ov-bg: rgba(12, 12, 12, ${settings.themeData?.bgOpacity || 0.6});

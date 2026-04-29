@@ -1,70 +1,9 @@
 function GUI(utils) {
-	const fs = require('fs');
-	const path = require('path');
-
-	// Checks a few locations for the rest of the code as path.dirname and __dirname by default is different on the compiled release and the interpreted release 
-	// This is an Electron issue and i can't fix it
-	// This function would go in utils.js as it will belong in multiple files but I can't find utils.js without it 
-	function resolveBase(startDir) {
-		function findFolder(dir, name) {
-			while (!fs.existsSync(path.join(dir, name)) && path.dirname(dir) !== dir) {
-				dir = path.dirname(dir);
-			}
-			return fs.existsSync(path.join(dir, name)) ?
-				path.join(dir, name) :
-				null;
-		}
-
-		console.log(startDir);
-
-		let omniversePath =
-			findFolder(startDir, "omniverse") ||
-			findFolder(startDir, "app") ||
-			findFolder(startDir, "src");
-
-		if (!omniversePath) {
-			console.error('Neither "omniverse", "app", nor "src" was found!');
-			return null;
-		}
-
-		console.log("Using folder:", omniversePath);
-
-		return omniversePath;
-	}
-	omniversePath = resolveBase(__dirname);
-
-	console.log('Using folder:', omniversePath);
-	if (omniversePath !== base) {
-		base = path.join(omniversePath, 'src');
+	function resolvePath(raw, base) {
+	if (raw.startsWith("/") || /^[A-Za-z]:[\\/]/.test(raw)) return raw;
+	return base + "/" + raw;
 	}
 
-	const settingsPath = path.join(omniversePath, 'src', "settings.json");
-
-	function readSettings() {
-		try {
-			if (!fs.existsSync(settingsPath)) return {};
-			return JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-		} catch {
-			return {};
-		}
-	}
-
-	function writeSettings(obj) {
-		try {
-			fs.writeFileSync(settingsPath, JSON.stringify(obj, null, 2), 'utf-8');
-		} catch (err) {
-			console.error('Error writing settings:', err);
-		}
-	}
-
-	let settings = readSettings();
-
-	let css;
-	try {
-		css = fs.readFileSync(path.resolve(base, 'modules', 'style.css'), 'utf8');
-	} catch (err) {
-		console.error('Failed to get CSS:', err);
-	}
 	utils.injectStyle(css);
 
 	const CROSSHAIR_TEMPLATES = {
@@ -898,9 +837,7 @@ function GUI(utils) {
 		ensureOverlays();
 		console.log(settings.showAnimeGif);
 		const raw = settings.animeGifPath || "anime.gif";
-		const abs = path.isAbsolute(raw) ? raw : path.join(base, raw);
-
-
+		const abs = resolvePath(raw, _payload.base);
 		const full = "file:///" + abs.replace(/\\/g, "/");
 
 		const existing = document.getElementById("customGifEl");

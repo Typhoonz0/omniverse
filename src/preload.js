@@ -1,59 +1,34 @@
-// if ur just looking here to make sure this isnt malware or ur curious go for it, but if youre the loser who keeps stealing my code fuck off or credit omniverse
+const raw = process.argv.find(a => a.startsWith("--settings="));
+const { contextBridge, ipcRenderer } = require("electron");
 
-const fs = require('fs');
-const path = require('path');
+contextBridge.exposeInMainWorld("omniverse", {
+  getSettings: () => ipcRenderer.invoke("get-settings"),
+  saveSettings: (newSettings) => ipcRenderer.invoke("save-settings", newSettings),
+});
+const settings = raw ? JSON.parse(raw.slice("--settings=".length)) : {};
+const selectedSkins = settings.selectedSkins ?? {};
+console.log(selectedSkins);
+console.log("running!");
+if (Object.keys(selectedSkins).length > 0) {
+  const _parse = JSON.parse;
 
-(function () {
-  function resolveBase(startDir) {
-    function findFolder(dir, name) {
-      while (!fs.existsSync(path.join(dir, name)) && path.dirname(dir) !== dir) {
-        dir = path.dirname(dir);
-      }
-      return fs.existsSync(path.join(dir, name))
-        ? path.join(dir, name)
-        : null;
+  JSON.parse = function (text, reviver) {
+    let result;
+    
+    try {
+      result = _parse.call(this, text, reviver);
+    } catch (e) {
+      throw e;
     }
-
-    let omniversePath =
-      findFolder(startDir, 'omniverse') ||
-      findFolder(startDir, 'app') ||
-      findFolder(startDir, 'src');
-
-    if (!omniversePath) return null;
-
-    return path.basename(omniversePath) === 'src'
-      ? omniversePath
-      : path.join(omniversePath, 'src');
-  }
-
-  const base = resolveBase(__dirname);
-  if (!base) return;
-
-  const settingsPath = path.join(base, 'settings.json');
-
-  let selectedSkins = {};
-
-  try {
-    const raw = fs.readFileSync(settingsPath, 'utf8');
-    const parsed = JSON.parse(raw);
-    if (parsed && parsed.selectedSkins) {
-      selectedSkins = parsed.selectedSkins;
-    }
-  } catch (_) {}
-
-  const originalJSONParse = JSON.parse;
-
-  window.JSON.parse = function (text, reviver) {
-    const result = originalJSONParse.call(this, text, reviver);
-
+    console.log(result);
     if (
       result &&
       Array.isArray(result.skins) &&
       Array.isArray(result.equippedSkins) &&
-      typeof result.username === 'string'
+      typeof result.username === "string"
     ) {
       for (const [weapon, skinName] of Object.entries(selectedSkins)) {
-        if (!skinName || skinName === 'default') continue;
+        if (!skinName || skinName === "default") continue;
 
         const skinObj = { name: skinName, weapon, wear: 0 };
 
@@ -72,4 +47,4 @@ const path = require('path');
 
     return result;
   };
-})();
+}

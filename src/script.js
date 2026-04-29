@@ -8,99 +8,104 @@
 // CREDITS:
 // By xLiam1 | xliam.xyz
 
-const fs = require('fs');
-const path = require('path');
+/* ----------------------------
+   PAYLOAD (injected by main.js)
+---------------------------- */
 
-// Checks a few locations for the rest of the code as path.dirname and __dirname by default is different on the compiled release and the interpreted release 
-// This is an Electron issue and i can't fix it
-// This function would go in utils.js as it will belong in multiple files but I can't find utils.js without it 
-function resolveBase(startDir) {
-    function findFolder(dir, name) {
-        while (!fs.existsSync(path.join(dir, name)) && path.dirname(dir) !== dir) {
-            dir = path.dirname(dir);
-        }
-        return fs.existsSync(path.join(dir, name))
-            ? path.join(dir, name)
-            : null;
-    }
+const _raw = process.argv.find(a => a.startsWith("--omniverse="));
+const _payload = _raw ? JSON.parse(_raw.slice("--omniverse=".length)) : {};
 
-    console.log(startDir);
+const selectedSkins = _payload.selectedSkins ?? {};
+const theme         = _payload.themeData    ?? null;
+const version       = _payload.version      ?? "Unknown";
 
-    let omniversePath =
-        findFolder(startDir, "omniverse") ||
-        findFolder(startDir, "app") ||
-        findFolder(startDir, "src");
+/* ----------------------------
+   SKIN INJECTION
+---------------------------- */
 
-    if (!omniversePath) {
-        console.error('Neither "omniverse", "app", nor "src" was found!');
-        return null;
-    }
+if (Object.keys(selectedSkins).length > 0) {
+  const _parse = JSON.parse;
 
-    console.log("Using folder:", omniversePath);
-
-    return path.basename(omniversePath) === "src"
-        ? omniversePath
-        : path.join(omniversePath, "src");
-}
-base = resolveBase(__dirname);
-
-const utils = require(path.join(base, 'modules', 'utils.js'));
-const { StatsOverlay } = require(path.join(base, 'modules', 'stats.js'));
-const { KeysOverlay } = require(path.join(base, 'modules', 'keysoverlay.js'));
-const { GUI } = require(path.join(base, 'modules', 'gui.js')); 
-
-const settingsPath = path.join(base, "settings.json");
-
-function readSettings() {
+  JSON.parse = function (text, reviver) {
+    let result;
     try {
-        if (!fs.existsSync(settingsPath)) return {};
-        return JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-    } catch {
-        return {};
+      result = _parse.call(this, text, reviver);
+    } catch (e) {
+      throw e;
     }
+
+    if (
+      result &&
+      Array.isArray(result.skins) &&
+      Array.isArray(result.equippedSkins) &&
+      typeof result.username === "string"
+    ) {
+      for (const [weapon, skinName] of Object.entries(selectedSkins)) {
+        if (!skinName || skinName === "default") continue;
+
+        const skinObj = { name: skinName, weapon, wear: 0 };
+
+        if (!result.skins.some(s => s.name === skinName && s.weapon === weapon)) {
+          result.skins.push(skinObj);
+        }
+
+        const idx = result.equippedSkins.findIndex(s => s.weapon === weapon);
+        if (idx !== -1) {
+          result.equippedSkins[idx] = skinObj;
+        } else {
+          result.equippedSkins.push(skinObj);
+        }
+      }
+    }
+
+    return result;
+  };
 }
 
-let theme = readSettings().themeData;
+/* ----------------------------
+   MODULES (browser-safe, no fs/require)
+---------------------------- */
+
+const utils = window.__omniverseUtils;         // expected to be set by preload.js
+const { StatsOverlay } = window.__omniverseStats;
+const { KeysOverlay }  = window.__omniverseKeys;
+const { GUI }          = window.__omniverseGUI;
 
 utils.injectStyle(`
 @import 'https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap';
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:'DM Sans',sans-serif
-}`)
-
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'DM Sans', sans-serif;
+}
+`);
 
 StatsOverlay(utils, theme);
 KeysOverlay(utils, theme);
-GUI(utils); 
+GUI(utils);
 
-let version = 'Unknown';
-try {
-    const versionPath = path.resolve(omniversePath, 'version.txt');
-    version = fs.readFileSync(versionPath, 'utf8').trim();
-} catch (err) {
-    console.error('Failed to read version.txt:', err);
-}
+/* ----------------------------
+   WATERMARK
+---------------------------- */
 
-const date = new Date().toLocaleDateString();
-const osInfo = (utils && utils.OSInfo()) ? utils.OSInfo() : 'Unknown OS';
+const date   = new Date().toLocaleDateString();
+const osInfo = utils?.OSInfo?.() ?? "Unknown OS";
 
-const watermark = document.createElement('div');
+const watermark = document.createElement("div");
 watermark.textContent = `Omniverse v${version} | ${date} | ${osInfo}`;
 
 Object.assign(watermark.style, {
-    position: 'fixed',
-    bottom: '8px',
-    left: '8px',
-    opacity: '0.3',
-    color: '#fff',
-    fontSize: '15px',
-    zIndex: '999999',
-    pointerEvents: 'none',
-    userSelect: 'none',
-    textShadow: '1px 1px 2px rgba(0,0,0,0.6)',
+  position:    "fixed",
+  bottom:      "8px",
+  left:        "8px",
+  opacity:     "0.3",
+  color:       "#fff",
+  fontSize:    "15px",
+  zIndex:      "999999",
+  pointerEvents: "none",
+  userSelect:  "none",
+  textShadow:  "1px 1px 2px rgba(0,0,0,0.6)",
 });
 
 document.body.appendChild(watermark);

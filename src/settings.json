@@ -2,7 +2,7 @@
   "toggleKey": "o",
   "showOverlay": false,
   "showStats": false,
-  "crossEnable": true,
+  "crossEnable": false,
   "crossColor": "#ff4de7",
   "crossSize": 4,
   "crossThickness": 2,
@@ -18,13 +18,13 @@
     "red2": "#2b2b2b"
   },
   "largewindow": false,
-  "disableFrameRateLimit": true,
-  "forceHighPerformanceGPU": true,
+  "disableFrameRateLimit": false,
+  "forceHighPerformanceGPU": false,
   "swapper": true,
   "rpc": false,
   "animeGifSize": 100,
   "selectedSkins": {
-    "ar": "default",
+    "ar": "matrix",
     "smg": "default",
     "awp": "default",
     "shotgun": "default"
