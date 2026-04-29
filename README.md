@@ -3,22 +3,26 @@
   <img src="github/title.png">
 </p>
 <p align="center">
-<b>A modern, easy to use Deadshot.io client.</b>
+<b>The best and only working Deadshot.io client.</b>
 
 <div align="center">
-  <img src="github/image.png" height="250">
+  <img src="github/new.png" height="270">
   <br>
-  <i>Preview of Omniverse 0.78's Default Config</i> 
-</div>
-<div align="center">
-  <img src="github/matrix-again.png" height="250">
-  <br>
-  <i>Yes, you can spoof matrix</i> 
+  <i>Preview of Omniverse 0.85's Default Config</i> 
 </div>
 
-## DO NOT DISTRIBUTE WITHOUT CREDIT
+> [!TIP]
+> Please star this repo! I've been working on this client for a long time.
+
+> [!CAUTION]
+> Please do not distribute Omniverse or its source code without crediting me.
+
+> [!NOTE]
+> Check this repo if Omniverse stops working, I'll probably have a fix in a little while.
+
 ## Download:
 https://github.com/Typhoonz0/omniverse/releases/
+
 ## Run from source:
 ```bash
 git clone https://github.com/Typhoonz0/omniverse.git
@@ -26,8 +30,10 @@ cd omniverse
 npm install
 npm start
 ```
+
 ## Features:
-- [x] FPS Booster (literally triples your FPS)
+- [x] Use any skin in the game (e.g. Matrix, Neon, 1st Birthday)
+- [x] FPS Uncapper
 - [x] Keys Overlay - WASD C, R, Left/Right click 
 - [x] PC Stats - Just FPS + Ping or with Platform + CPU Cores
 - [x] Gun skin swapper 
@@ -37,29 +43,26 @@ npm start
 - [x] Auto Fullscreen
 - [x] Adblocker
 - [x] Discord RPC
-- [ ] Aimbot soon trust 
 
-## The UI is not coming up, or stuff just doesn't work!
-Happens a lot on windows try:
+## Stuff doesn't work!
+Try these steps and **restart the client** each time until it works:
+- Close all Omniverse windows 
+- Delete old folders of omniverse on ur pc only keep the newest one
 - Running the app a second time
+- Restart your computer
 - Renaming the root folder from 'omniverse-main' to simply 'omniverse'
 - In compiled releases, copying resources/app to resources/omniverse (yes i know its stupid)
-- Open an issue
-
-## I have a white screen!
-This is an Electron issue, try these steps and **restart the client** each time until it works:
-- Connect to Internet
-- Close all Omniverse windows 
-- Restart your computer
 - Remove `C:/Users/name/AppData/Roaming/deadshot-viewer` or `/home/user/.config/deadshot-viewer`
+- Wait a little
 - Open an issue
 
-## How to swap your guns:
+## How to use the resource swapper:
+Replace the example images inside the `swap/` directory, and reload the client. 
+This is in `<omniverse folder location>/resources/app/src/swap` or `<omniverse folder location>/src/swap`.
 
-Replace the example images inside the `swap/` directory, and reload  the client. Make sure the names are EXACTLY the same as below.
-
-This is in `<omniverse folder location>/resources/app/swap` or `<omniverse folder location>/src/swap`
 ```
+For example, this is how you swap your default weapon skins:
+
 swap/
 └── weapons
     ├── ar2

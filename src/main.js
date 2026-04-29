@@ -281,6 +281,7 @@ function createWindow() {
                 "*://deadshot.io/character/*",
                 "*://deadshot.io/maps/*",
                 "*://deadshot.io/audio/*",
+                "*://deadshot.io/animatedskins/*",
             ],
         };
 
@@ -288,10 +289,8 @@ function createWindow() {
             const url = new URL(reqDetails.url);
             const fileName = path.basename(url.pathname);
             const swapRoot = path.join(__dirname, "swap");
-            console.log("intercepted:", fileName);
             let foundFile = null;
             if (fs.existsSync(swapRoot)) foundFile = findFileRecursive(swapRoot, fileName);
-            console.log("found:", foundFile);
             if (foundFile) {
                 const relative = path.relative(swapRoot, foundFile);
                 next({
