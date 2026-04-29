@@ -228,7 +228,7 @@ function buildRendererScript(payload, modules) {
         "const _date = new Date().toLocaleDateString();",
         "const _osInfo = (utils && utils.OSInfo) ? utils.OSInfo() : 'Unknown OS';",
         "const _watermark = document.createElement('div');",
-        "_watermark.textContent = 'Omniverse v' + version + ' | ' + _date + ' | ' + _osInfo;",
+        "_watermark.textContent = 'Omniverse v' + version",
         "Object.assign(_watermark.style, {",
         "  position: 'fixed', bottom: '8px', left: '8px', opacity: '0.3',",
         "  color: '#fff', fontSize: '15px', zIndex: '999999',",
