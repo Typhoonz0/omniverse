@@ -24,7 +24,7 @@
   "rpc": false,
   "animeGifSize": 100,
   "selectedSkins": {
-    "ar": "matrix",
+    "ar": "default",
     "smg": "default",
     "awp": "default",
     "shotgun": "default"
