@@ -117,7 +117,7 @@ if (settings.rpc) {
             console.log("Discord RPC connected");
             rpcClient.setActivity({
                 details: "Playing Deadshot.io",
-                state: "https://github.com/Typhoonz0/omniverse",
+                state: "",
                 largeImageKey: "logo",
                 largeImageText: "Deadshot.io",
                 startTimestamp: Date.now(),
