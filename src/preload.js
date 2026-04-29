@@ -5,10 +5,10 @@ contextBridge.exposeInMainWorld("omniverse", {
   getSettings: () => ipcRenderer.invoke("get-settings"),
   saveSettings: (newSettings) => ipcRenderer.invoke("save-settings", newSettings),
 });
+
 const settings = raw ? JSON.parse(raw.slice("--settings=".length)) : {};
 const selectedSkins = settings.selectedSkins ?? {};
-console.log(selectedSkins);
-console.log("running!");
+
 if (Object.keys(selectedSkins).length > 0) {
   const _parse = JSON.parse;
 

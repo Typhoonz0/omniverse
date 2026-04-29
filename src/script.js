@@ -8,20 +8,12 @@
 // CREDITS:
 // By xLiam1 | xliam.xyz
 
-/* ----------------------------
-   PAYLOAD (injected by main.js)
----------------------------- */
-
 const _raw = process.argv.find(a => a.startsWith("--omniverse="));
 const _payload = _raw ? JSON.parse(_raw.slice("--omniverse=".length)) : {};
 
 const selectedSkins = _payload.selectedSkins ?? {};
 const theme         = _payload.themeData    ?? null;
 const version       = _payload.version      ?? "Unknown";
-
-/* ----------------------------
-   SKIN INJECTION
----------------------------- */
 
 if (Object.keys(selectedSkins).length > 0) {
   const _parse = JSON.parse;
@@ -62,11 +54,7 @@ if (Object.keys(selectedSkins).length > 0) {
   };
 }
 
-/* ----------------------------
-   MODULES (browser-safe, no fs/require)
----------------------------- */
-
-const utils = window.__omniverseUtils;         // expected to be set by preload.js
+const utils = window.__omniverseUtils;        
 const { StatsOverlay } = window.__omniverseStats;
 const { KeysOverlay }  = window.__omniverseKeys;
 const { GUI }          = window.__omniverseGUI;
