@@ -842,7 +842,7 @@ function GUI(utils) {
 
 		const existing = document.getElementById("customGifEl");
 		if (existing) existing.remove();
-		if (!settings.showAnimeGif || !fs.existsSync(abs)) return;
+		if (!settings.showAnimeGif) return;
 
 		const gifEl = document.createElement("div");
 		gifEl.id = "customGifEl";
