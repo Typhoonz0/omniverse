@@ -21,7 +21,7 @@
   "disableFrameRateLimit": false,
   "forceHighPerformanceGPU": false,
   "swapper": true,
-  "rpc": false,
+  "rpc": true,
   "animeGifSize": 100,
   "selectedSkins": {
     "ar": "default",
