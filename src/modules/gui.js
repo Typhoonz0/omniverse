@@ -48,7 +48,6 @@ function GUI(utils) {
 	wrap.appendChild(contentEl);
 	gui.appendChild(wrap);
 
-	// Skin options with lowercase keys and display names
 	const SKIN_OPTIONS = {
 		"default": "Default",
 		"bacon": "Bacon",
@@ -406,22 +405,10 @@ function GUI(utils) {
 				html: '<strong>Skin Selector</strong>'
 			}));
 
-			// Note about reloading
-			const noteEl = utils.el('div', {
-				style: {
-					padding: '8px 12px',
-					background: 'rgba(255, 193, 7, 0.15)',
-					borderRadius: '6px',
-					marginBottom: '12px',
-					fontSize: '12px',
-					color: '#ffc107',
-					border: '1px solid rgba(255, 193, 7, 0.3)'
-				}
-			});
-			noteEl.textContent = '⚠️ Reload client to apply skin changes';
-			contentEl.appendChild(noteEl);
+			contentEl.appendChild(utils.el('div', {
+				html: 'Reload to apply changes'
+			}));
 
-			// Create dropdowns for each weapon type
 			const weapons = [
 				{ key: 'ar', label: 'Assault Rifle' },
 				{ key: 'smg', label: 'SMG' },
@@ -434,8 +421,7 @@ function GUI(utils) {
 				row.appendChild(utils.el('label', { text: weapon.label }));
 
 				const select = utils.el('select', { cls: 'ov-select' });
-				
-				// Add all skin options
+
 				Object.entries(SKIN_OPTIONS).forEach(([value, displayName]) => {
 			
 					const option = utils.el('option', { text: displayName });
@@ -744,8 +730,6 @@ function GUI(utils) {
 		}
 
 		if (activeTab === 'other') {
-
-			// --- Get Rank button ---
 			const rankRow = utils.el('div', { cls: 'ov-row' });
 			rankRow.appendChild(utils.el('label', { text: 'Player Rank' }));
 			const rankBtn = utils.el('button', {

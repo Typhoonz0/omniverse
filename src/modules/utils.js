@@ -73,88 +73,82 @@ const utils = {
         return e;
     },
 
-makeDraggable(targetEl, opts = {}) {
-    let dragging = false;
-    let offsetX = 0;
-    let offsetY = 0;
+    makeDraggable(targetEl, opts = {}) {
+        let dragging = false;
+        let offsetX = 0;
+        let offsetY = 0;
 
-    const handle = opts.handle || targetEl;
-    const storageKey = opts.storageKey || targetEl.id || null;
-    const onSave = opts.onSave || (() => {});
+        const handle = opts.handle || targetEl;
+        const storageKey = opts.storageKey || targetEl.id || null;
+        const onSave = opts.onSave || (() => {});
 
-    function isInteractive(el) {
-        return el.closest(
-            'input, textarea, select, button, label, option'
-        );
-    }
-
-    function start(e) {
-        // left click / primary pointer only
-        if (e.type === 'mousedown' && e.button !== 0) return;
-
-        // never start drag from interactive elements (sliders, inputs, etc.)
-        if (isInteractive(e.target)) return;
-
-        dragging = true;
-
-        const rect = targetEl.getBoundingClientRect();
-        const clientX = e.clientX ?? e.touches?.[0]?.clientX;
-        const clientY = e.clientY ?? e.touches?.[0]?.clientY;
-
-        offsetX = clientX - rect.left;
-        offsetY = clientY - rect.top;
-
-        // prevent text selection, but do NOT break inputs
-        e.preventDefault?.();
-    }
-
-    function move(e) {
-        if (!dragging) return;
-
-        const clientX = e.clientX ?? e.touches?.[0]?.clientX;
-        const clientY = e.clientY ?? e.touches?.[0]?.clientY;
-
-        targetEl.style.left = (clientX - offsetX) + 'px';
-        targetEl.style.top = (clientY - offsetY) + 'px';
-        targetEl.style.right = 'auto';
-    }
-
-    function end() {
-        if (!dragging) return;
-        dragging = false;
-
-        if (storageKey) {
-            utils.savePosition(storageKey, targetEl.offsetLeft, targetEl.offsetTop);
-            onSave({
-                x: targetEl.offsetLeft,
-                y: targetEl.offsetTop
-            });
+        function isInteractive(el) {
+            return el.closest(
+                'input, textarea, select, button, label, option'
+            );
         }
-    }
 
-    // pointer events cover mouse + touch cleanly
-    handle.addEventListener('pointerdown', start);
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', end);
+        function start(e) {
+            if (e.type === 'mousedown' && e.button !== 0) return;
+            if (isInteractive(e.target)) return;
 
-    // restore saved position
-    if (storageKey) {
-        const pos = utils.loadPosition(storageKey);
-        if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
-            targetEl.style.left = pos.x + 'px';
-            targetEl.style.top = pos.y + 'px';
+            dragging = true;
+
+            const rect = targetEl.getBoundingClientRect();
+            const clientX = e.clientX ?? e.touches?.[0]?.clientX;
+            const clientY = e.clientY ?? e.touches?.[0]?.clientY;
+
+            offsetX = clientX - rect.left;
+            offsetY = clientY - rect.top;
+
+            e.preventDefault?.();
+        }
+
+        function move(e) {
+            if (!dragging) return;
+
+            const clientX = e.clientX ?? e.touches?.[0]?.clientX;
+            const clientY = e.clientY ?? e.touches?.[0]?.clientY;
+
+            targetEl.style.left = (clientX - offsetX) + 'px';
+            targetEl.style.top = (clientY - offsetY) + 'px';
             targetEl.style.right = 'auto';
         }
-    }
 
-    return {
-        destroy() {
-            handle.removeEventListener('pointerdown', start);
-            window.removeEventListener('pointermove', move);
-            window.removeEventListener('pointerup', end);
+        function end() {
+            if (!dragging) return;
+            dragging = false;
+
+            if (storageKey) {
+                utils.savePosition(storageKey, targetEl.offsetLeft, targetEl.offsetTop);
+                onSave({
+                    x: targetEl.offsetLeft,
+                    y: targetEl.offsetTop
+                });
+            }
         }
-    };
-},
+
+        handle.addEventListener('pointerdown', start);
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', end);
+
+        if (storageKey) {
+            const pos = utils.loadPosition(storageKey);
+            if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
+                targetEl.style.left = pos.x + 'px';
+                targetEl.style.top = pos.y + 'px';
+                targetEl.style.right = 'auto';
+            }
+        }
+
+        return {
+            destroy() {
+                handle.removeEventListener('pointerdown', start);
+                window.removeEventListener('pointermove', move);
+                window.removeEventListener('pointerup', end);
+            }
+        };
+    },
 
     getTheme(base) {
         const themes = require(path.join(base, 'themes.json'));
