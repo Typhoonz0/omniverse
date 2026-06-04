@@ -6,11 +6,11 @@
 // DO NOT DISTRIBUTE WITHOUT CREDIT
 // CREDITS: By xLiam1 | xliam.xyz
 
-const { app, BrowserWindow, protocol, session, ipcMain} = require("electron");
+const { app, BrowserWindow, protocol, session, ipcMain, net } = require("electron");
 const RPC = require("discord-rpc");
 const path = require("path");
 const fs = require("fs");
-const { ElectronBlocker} = require("@ghostery/adblocker-electron");
+const { ElectronBlocker } = require("@ghostery/adblocker-electron");
 const fetch = require("cross-fetch");
 const betterWebRequest = require("electron-better-web-request");
 
@@ -21,14 +21,16 @@ const USER_AGENT =
 
 app.commandLine.appendSwitch("disable-blink-features", "AutomationControlled");
 
-protocol.registerSchemesAsPrivileged([{
-    scheme: "custom",
-    privileges: {
-        secure: true,
-        standard: true,
-        supportFetchAPI: true
-    }
-}]);
+protocol.registerSchemesAsPrivileged([
+    {
+        scheme: "custom",
+        privileges: { secure: true, standard: true, supportFetchAPI: true },
+    },
+    {
+        scheme: "modified",
+        privileges: { secure: true, standard: true, supportFetchAPI: true },
+    },
+]);
 
 function resolveBase(startDir) {
     function findFolder(dir, name) {
@@ -48,9 +50,9 @@ function resolveBase(startDir) {
         return null;
     }
 
-    return path.basename(omniversePath) === "src" ?
-        omniversePath :
-        path.join(omniversePath, "src");
+    return path.basename(omniversePath) === "src"
+        ? omniversePath
+        : path.join(omniversePath, "src");
 }
 
 const base = resolveBase(__dirname);
@@ -61,9 +63,7 @@ function loadSettings() {
     try {
         return JSON.parse(fs.readFileSync(settingsPath, "utf8"));
     } catch {
-        return {
-            selectedSkins: {}
-        };
+        return { selectedSkins: {} };
     }
 }
 
@@ -84,15 +84,10 @@ ipcMain.handle("save-settings", (event, newSettings) => {
             JSON.stringify(settings, null, 2),
             "utf8"
         );
-        return {
-            ok: true
-        };
+        return { ok: true };
     } catch (err) {
         console.error("Failed to save settings:", err);
-        return {
-            ok: false,
-            error: err.message
-        };
+        return { ok: false, error: err.message };
     }
 });
 
@@ -110,9 +105,7 @@ try {
 if (settings.rpc) {
     const clientId = "1426074176518881373";
     try {
-        const rpcClient = new RPC.Client({
-            transport: "ipc"
-        });
+        const rpcClient = new RPC.Client({ transport: "ipc" });
         rpcClient.on("ready", () => {
             console.log("Discord RPC connected");
             rpcClient.setActivity({
@@ -122,15 +115,10 @@ if (settings.rpc) {
                 largeImageText: "Deadshot.io",
                 startTimestamp: Date.now(),
                 instance: true,
-                buttons: [{
-                    label: "download",
-                    url: "https://github.com/Typhoonz0/omniverse"
-                }],
+                buttons: [{ label: "download", url: "https://github.com/Typhoonz0/omniverse" }],
             });
         });
-        rpcClient.login({
-            clientId
-        }).catch((err) => {
+        rpcClient.login({ clientId }).catch((err) => {
             console.warn("Discord RPC failed to connect:", err.message);
         });
     } catch (err) {
@@ -138,11 +126,8 @@ if (settings.rpc) {
     }
 }
 
-
 function findFileRecursive(baseDir, targetName) {
-    const entries = fs.readdirSync(baseDir, {
-        withFileTypes: true
-    });
+    const entries = fs.readdirSync(baseDir, { withFileTypes: true });
     for (const entry of entries) {
         const fullPath = path.join(baseDir, entry.name);
         if (entry.isFile() && entry.name === targetName) return fullPath;
@@ -160,15 +145,13 @@ function stripModuleExports(code) {
 
 function buildRendererScript(payload, modules) {
     const p = JSON.stringify(payload);
-
     const utilsCode = stripModuleExports(modules.utilsCode);
     const statsCode = stripModuleExports(modules.statsCode);
-    const keysCode = stripModuleExports(modules.keysCode);
-    const guiCode = stripModuleExports(modules.guiCode);
+    const keysCode  = stripModuleExports(modules.keysCode);
+    const guiCode   = stripModuleExports(modules.guiCode);
 
     return [
         "(() => {",
-
         "const _payload = " + p + ";",
         "const selectedSkins = _payload.selectedSkins ?? {};",
         "const theme         = _payload.themeData    ?? null;",
@@ -176,59 +159,20 @@ function buildRendererScript(payload, modules) {
         "const css           = _payload.css          ?? '';",
         "const settings      = _payload.settings     ?? {};",
         "const base          = _payload.base         ?? '';",
-
-        "function readSettings() {",
-        "  return settings;",
-        "}",
-        "function writeSettings(obj) {",
-        "  Object.assign(settings, obj);",
-        "  window.omniverse.saveSettings(obj);",
-        "}",
-
+        "function readSettings() { return settings; }",
+        "function writeSettings(obj) { Object.assign(settings, obj); window.omniverse.saveSettings(obj); }",
         utilsCode,
         statsCode,
         keysCode,
         guiCode,
-
-        "if (Object.keys(selectedSkins).length > 0) {",
-        "  const _parse = JSON.parse;",
-        "  JSON.parse = function (text, reviver) {",
-        "    let result;",
-        "    try { result = _parse.call(this, text, reviver); }",
-        "    catch (e) { throw e; }",
-        "    if (",
-        "      result &&",
-        "      Array.isArray(result.skins) &&",
-        "      Array.isArray(result.equippedSkins) &&",
-        "      typeof result.username === 'string'",
-        "    ) {",
-        "      for (const [weapon, skinName] of Object.entries(selectedSkins)) {",
-        "        if (!skinName || skinName === 'default') continue;",
-        "        const skinObj = { name: skinName, weapon, wear: 0 };",
-        "        if (!result.skins.some(s => s.name === skinName && s.weapon === weapon)) {",
-        "          result.skins.push(skinObj);",
-        "        }",
-        "        const idx = result.equippedSkins.findIndex(s => s.weapon === weapon);",
-        "        if (idx !== -1) result.equippedSkins[idx] = skinObj;",
-        "        else result.equippedSkins.push(skinObj);",
-        "      }",
-        "    }",
-        "    return result;",
-        "  };",
-        "}",
-
         "const _style = document.createElement('style');",
         "_style.textContent = css;",
         "document.head.appendChild(_style);",
-
         "StatsOverlay(utils, theme);",
         "KeysOverlay(utils, theme);",
         "GUI(utils);",
-
-        "const _date = new Date().toLocaleDateString();",
-        "const _osInfo = (utils && utils.OSInfo) ? utils.OSInfo() : 'Unknown OS';",
         "const _watermark = document.createElement('div');",
-        "_watermark.textContent = 'Omniverse v' + version + ' | ' + _date + ' | ' + _osInfo;",
+        "_watermark.textContent = 'Omniverse v' + version;",
         "Object.assign(_watermark.style, {",
         "  position: 'fixed', bottom: '8px', left: '8px', opacity: '0.3',",
         "  color: '#fff', fontSize: '15px', zIndex: '999999',",
@@ -236,10 +180,11 @@ function buildRendererScript(payload, modules) {
         "  textShadow: '1px 1px 2px rgba(0,0,0,0.6)',",
         "});",
         "document.body.appendChild(_watermark);",
-
         "})();",
     ].join("\n");
 }
+
+const LOGIN_CACHE = path.join(__dirname, "loginnnn.json");
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -266,50 +211,14 @@ function createWindow() {
                 .replace(/Electron\/[^\s]+/g, "")
                 .trim();
         }
-        callback({
-            requestHeaders: headers
-        });
+        callback({ requestHeaders: headers });
     });
-
-    if (settings.swapper) {
-        const resourceFilter = {
-            urls: [
-                "*://deadshot.io/weapons/*",
-                "*://deadshot.io/skins/*",
-                "*://deadshot.io/promo/*",
-                "*://deadshot.io/textures/*",
-                "*://deadshot.io/character/*",
-                "*://deadshot.io/maps/*",
-                "*://deadshot.io/audio/*",
-                "*://deadshot.io/animatedskins/*",
-            ],
-        };
-
-        session.defaultSession.webRequest.onBeforeRequest(resourceFilter, (reqDetails, next) => {
-            const url = new URL(reqDetails.url);
-            const fileName = path.basename(url.pathname);
-            const swapRoot = path.join(__dirname, "swap");
-            let foundFile = null;
-            if (fs.existsSync(swapRoot)) foundFile = findFileRecursive(swapRoot, fileName);
-            if (foundFile) {
-                const relative = path.relative(swapRoot, foundFile);
-                next({
-                    redirectURL: "custom://" + relative.replace(/\\/g, "/")
-                });
-            } else {
-                next({
-                    cancel: false
-                });
-            }
-        });
-    }
-
 
     win.webContents.on("did-finish-load", () => {
         const utilsCode = fs.readFileSync(path.join(base, "modules", "utils.js"), "utf8");
         const statsCode = fs.readFileSync(path.join(base, "modules", "stats.js"), "utf8");
-        const keysCode = fs.readFileSync(path.join(base, "modules", "keysoverlay.js"), "utf8");
-        const guiCode = fs.readFileSync(path.join(base, "modules", "gui.js"), "utf8");
+        const keysCode  = fs.readFileSync(path.join(base, "modules", "keysoverlay.js"), "utf8");
+        const guiCode   = fs.readFileSync(path.join(base, "modules", "gui.js"), "utf8");
 
         let css = "";
         try {
@@ -327,12 +236,7 @@ function createWindow() {
             base,
         };
 
-        const script = buildRendererScript(payload, {
-            utilsCode,
-            statsCode,
-            keysCode,
-            guiCode
-        });
+        const script = buildRendererScript(payload, { utilsCode, statsCode, keysCode, guiCode });
 
         win.webContents
             .executeJavaScript(script)
@@ -351,19 +255,15 @@ function createWindow() {
 app.whenReady().then(() => {
     betterWebRequest.default(session.defaultSession);
     session.defaultSession.webRequest.setResolver("onBeforeRequest", async (listeners) => {
-        let finalResponse = {
-            cancel: false
-        };
+        let finalResponse = { cancel: false };
         for (const listener of listeners) {
             const result = await listener.apply();
-            finalResponse = {
-                ...finalResponse,
-                ...result
-            };
+            finalResponse = { ...finalResponse, ...result };
         }
         return finalResponse;
     });
 
+    // hello tree (:
     if (settings.swapper) {
         protocol.handle("custom", async (req) => {
             const relativePath = req.url.slice(9);
@@ -371,15 +271,123 @@ app.whenReady().then(() => {
             try {
                 const fileData = await fs.promises.readFile(localPath);
                 return new Response(fileData, {
-                    headers: {
-                        "Content-Type": "image/webp"
-                    }
+                    headers: { "Content-Type": "image/webp" },
                 });
             } catch (err) {
                 console.error("Failed to serve swap file:", err.message);
-                return new Response("Not Found", {
-                    status: 404
+                return new Response("Not Found", { status: 404 });
+            }
+        });
+
+        protocol.handle("modified", () => {
+            try {
+                const data = fs.readFileSync(LOGIN_CACHE, "utf8");
+                return new Response(data, {
+                    headers: { "Content-Type": "application/json" },
                 });
+            } catch (err) {
+                console.error("[LOGIN] Failed to serve modified response:", err.message);
+                return new Response("{}", {
+                    headers: { "Content-Type": "application/json" },
+                });
+            }
+        });
+
+        const resourceFilter = {
+            urls: [
+                "*://deadshot.io/weapons/*",
+                "*://deadshot.io/skins/*",
+                "*://deadshot.io/promo/*",
+                "*://deadshot.io/textures/*",
+                "*://deadshot.io/character/*",
+                "*://deadshot.io/maps/*",
+                "*://deadshot.io/audio/*",
+                "*://deadshot.io/animatedskins/*",
+                "*://login.deadshot.io/login",
+            ],
+        };
+
+        let loginInFlight = false;
+
+        session.defaultSession.webRequest.onBeforeRequest(resourceFilter, (reqDetails, next) => {
+            const url = new URL(reqDetails.url);
+
+            if (url.href.includes("login.deadshot.io/login")) {
+                if (loginInFlight) {
+                    next({ cancel: false });
+                    return;
+                }
+
+                loginInFlight = true;
+
+                let bodyBuffer = null;
+                if (reqDetails.uploadData?.[0]?.bytes) {
+                    bodyBuffer = Buffer.from(reqDetails.uploadData[0].bytes);
+                }
+
+                console.log("[LOGIN] Forwarding body:", bodyBuffer ? bodyBuffer.toString() : "none");
+
+                net.fetch(reqDetails.url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: bodyBuffer,
+                })
+                .then((res) => {
+                    return res.text();
+                })
+                .then((text) => {
+                    loginInFlight = false;
+
+                    if (!text || text.trim() === "" || text.trim() === '""') {
+                        next({ cancel: false });
+                        return;
+                    }
+
+                    try {
+                        const json = JSON.parse(text);
+
+                        const selectedSkins = settings.selectedSkins ?? {};
+                        for (const [weapon, skinName] of Object.entries(selectedSkins)) {
+                            if (!skinName || skinName === "default") continue;
+
+                            const skinObj = { name: skinName, weapon, wear: 0 };
+
+                            if (!json.skins.some(s => s.name === skinName && s.weapon === weapon)) {
+                                json.skins.push(skinObj);
+                            }
+
+                            const idx = json.equippedSkins.findIndex(s => s.weapon === weapon);
+                            if (idx !== -1) {
+                                json.equippedSkins[idx] = skinObj;
+                            } else {
+                                json.equippedSkins.push(skinObj);
+                            }
+                        }
+
+                        fs.writeFileSync(LOGIN_CACHE, JSON.stringify(json, null, 2));
+
+                        next({ redirectURL: "modified://login" });
+                    } catch (e) {
+                        next({ cancel: false });
+                    }
+                })
+                .catch((e) => {
+                    loginInFlight = false;
+                    next({ cancel: false });
+                });
+
+                return;
+            }
+
+            const fileName = path.basename(new URL(reqDetails.url).pathname);
+            const swapRoot = path.join(__dirname, "swap");
+            let foundFile = null;
+            if (fs.existsSync(swapRoot)) foundFile = findFileRecursive(swapRoot, fileName);
+            if (foundFile) {
+                const relative = path.relative(swapRoot, foundFile);
+                next({ redirectURL: "custom://" + relative.replace(/\\/g, "/") });
+            } else {
+                next({ cancel: false });
             }
         });
     }
@@ -390,6 +398,7 @@ app.whenReady().then(() => {
         if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
 });
+
 app.on("window-all-closed", () => {
     if (process.platform !== "darwin") app.quit();
 });
