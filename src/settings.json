@@ -1,6 +1,6 @@
 {
   "toggleKey": "o",
-  "showOverlay": false,
+  "showOverlay": true,
   "showStats": false,
   "crossEnable": true,
   "crossColor": "#ff4de7",

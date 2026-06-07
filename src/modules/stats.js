@@ -36,15 +36,17 @@ function StatsOverlay(utils, theme) {
 
     let ping = 0;
     async function updatePing() {
-        const start = performance.now();
-        try {
-            await fetch("https://deadshot.io/favicon.ico", {
-                method: "HEAD",
-                cache: "no-store"
-            });
-            ping = Math.round(performance.now() - start);
-        } catch {
-            ping = -1;
+        if (utils.getRaw("dsOverlayStats") !== "false") {
+            const start = performance.now();
+            try {
+                await fetch("https://deadshot.io/", {
+                    method: "HEAD",
+                    cache: "no-store"
+                });
+                ping = Math.round(performance.now() - start);
+            } catch {
+                ping = -1;
+            }
         }
     }
 

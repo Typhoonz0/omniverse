@@ -1,6 +1,6 @@
 function KeysOverlay(utils, theme) {
     const keys = [
-        'c', 'w', 'r', ' ', 'shift',
+        'f', 'w', 'r', ' ', 'shift',
         'a', 's', 'd', 'mouseleft', 'mouseright'
     ];
     const keyLabels = {
@@ -11,7 +11,7 @@ function KeysOverlay(utils, theme) {
         'r': 'R',
         ' ': '␣',
         'shift': '🠭',
-        'c': 'C',
+        'f': 'F',
         'mouseleft': 'LMB',
         'mouseright': 'RMB'
     };
@@ -23,7 +23,7 @@ function KeysOverlay(utils, theme) {
         'r': theme.red2,
         ' ': theme.red2,
         'shift': theme.red2,
-        'c': theme.red2,
+        'f': theme.red2,
         'mouseleft': theme.red2,
         'mouseright': theme.red2
     };

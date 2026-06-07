@@ -143,22 +143,25 @@ function stripModuleExports(code) {
     return code.replace(/^\s*module\.exports\s*=\s*.+;?\s*$/gm, "");
 }
 
+/* Tree decided to break all clients with nodeintegration meaning I can't use 
+Javascript's "module" imports, meaning I have to build the payload from scratch */
+
 function buildRendererScript(payload, modules) {
     const p = JSON.stringify(payload);
     const utilsCode = stripModuleExports(modules.utilsCode);
     const statsCode = stripModuleExports(modules.statsCode);
-    const keysCode  = stripModuleExports(modules.keysCode);
-    const guiCode   = stripModuleExports(modules.guiCode);
+    const keysCode = stripModuleExports(modules.keysCode);
+    const guiCode = stripModuleExports(modules.guiCode);
 
     return [
         "(() => {",
         "const _payload = " + p + ";",
         "const selectedSkins = _payload.selectedSkins ?? {};",
-        "const theme         = _payload.themeData    ?? null;",
-        "const version       = _payload.version      ?? 'Unknown';",
-        "const css           = _payload.css          ?? '';",
-        "const settings      = _payload.settings     ?? {};",
-        "const base          = _payload.base         ?? '';",
+        "const theme = _payload.themeData ?? null;",
+        "const version = _payload.version ?? 'Unknown';",
+        "const css = _payload.css ?? '';",
+        "const settings = _payload.settings ?? {};",
+        "const base = _payload.base ?? '';",
         "function readSettings() { return settings; }",
         "function writeSettings(obj) { Object.assign(settings, obj); window.omniverse.saveSettings(obj); }",
         utilsCode,
@@ -178,13 +181,23 @@ function buildRendererScript(payload, modules) {
         "  color: '#fff', fontSize: '15px', zIndex: '999999',",
         "  pointerEvents: 'none', userSelect: 'none',",
         "  textShadow: '1px 1px 2px rgba(0,0,0,0.6)',",
+        "  fontFamily: 'DM Sans, sans-serif',",
         "});",
         "document.body.appendChild(_watermark);",
+        "fetch('https://raw.githubusercontent.com/Typhoonz0/omniverse/refs/heads/main/version.txt')",
+        "  .then(r => r.text())",
+        "  .then(latest => {",
+        "    const remote = latest.trim();",
+        "    if (remote && remote !== version) {",
+        "      _watermark.textContent = 'Omniverse v' + version + ' - new update at xliam.xyz/omniverse';",
+        "    }",
+        "  })",
+        "  .catch(() => {});",
         "})();",
     ].join("\n");
 }
 
-const LOGIN_CACHE = path.join(__dirname, "loginnnn.json");
+const LOGIN_CACHE = path.join(__dirname, "login-cache.json");
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -195,8 +208,6 @@ function createWindow() {
             preload: path.join(__dirname, "preload.js"),
             nodeIntegration: false,
             contextIsolation: true,
-            webSecurity: false,
-            enableRemoteModule: true,
             sandbox: false,
         },
     });
@@ -217,15 +228,9 @@ function createWindow() {
     win.webContents.on("did-finish-load", () => {
         const utilsCode = fs.readFileSync(path.join(base, "modules", "utils.js"), "utf8");
         const statsCode = fs.readFileSync(path.join(base, "modules", "stats.js"), "utf8");
-        const keysCode  = fs.readFileSync(path.join(base, "modules", "keysoverlay.js"), "utf8");
-        const guiCode   = fs.readFileSync(path.join(base, "modules", "gui.js"), "utf8");
-
-        let css = "";
-        try {
-            css = fs.readFileSync(path.join(base, "modules", "style.css"), "utf8");
-        } catch (err) {
-            console.warn("Failed to read style.css:", err.message);
-        }
+        const keysCode = fs.readFileSync(path.join(base, "modules", "keysoverlay.js"), "utf8");
+        const guiCode = fs.readFileSync(path.join(base, "modules", "gui.js"), "utf8");
+        const css = fs.readFileSync(path.join(base, "modules", "style.css"), "utf8");
 
         const payload = {
             selectedSkins: settings.selectedSkins ?? {},
@@ -252,6 +257,8 @@ function createWindow() {
     return win;
 }
 
+app.setPath('userData', path.join(app.getPath('appData'), 'deadshot-viewer')); // I don't want users to have to log in again
+
 app.whenReady().then(() => {
     betterWebRequest.default(session.defaultSession);
     session.defaultSession.webRequest.setResolver("onBeforeRequest", async (listeners) => {
@@ -263,7 +270,6 @@ app.whenReady().then(() => {
         return finalResponse;
     });
 
-    // hello tree (:
     if (settings.swapper) {
         protocol.handle("custom", async (req) => {
             const relativePath = req.url.slice(9);
@@ -286,7 +292,6 @@ app.whenReady().then(() => {
                     headers: { "Content-Type": "application/json" },
                 });
             } catch (err) {
-                console.error("[LOGIN] Failed to serve modified response:", err.message);
                 return new Response("{}", {
                     headers: { "Content-Type": "application/json" },
                 });
@@ -308,7 +313,8 @@ app.whenReady().then(() => {
         };
 
         let loginInFlight = false;
-
+        
+        /* Intercepting the login JSON to inject skins. Tree didn't like this */
         session.defaultSession.webRequest.onBeforeRequest(resourceFilter, (reqDetails, next) => {
             const url = new URL(reqDetails.url);
 
@@ -324,8 +330,6 @@ app.whenReady().then(() => {
                 if (reqDetails.uploadData?.[0]?.bytes) {
                     bodyBuffer = Buffer.from(reqDetails.uploadData[0].bytes);
                 }
-
-                console.log("[LOGIN] Forwarding body:", bodyBuffer ? bodyBuffer.toString() : "none");
 
                 net.fetch(reqDetails.url, {
                     method: "POST",

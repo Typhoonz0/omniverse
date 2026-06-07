@@ -1,7 +1,7 @@
 function GUI(utils) {
 	function resolvePath(raw, base) {
-	if (raw.startsWith("/") || /^[A-Za-z]:[\\/]/.test(raw)) return raw;
-	return base + "/" + raw;
+		if (raw.startsWith("/") || /^[A-Za-z]:[\\/]/.test(raw)) return raw;
+		return base + "/" + raw;
 	}
 
 	utils.injectStyle(css);
@@ -10,15 +10,14 @@ function GUI(utils) {
 		None: (s, c, t) => ``,
 		Dot: (s, c) => `<div style="width:${s}px;height:${s}px;background:${c};border-radius:50%"></div>`,
 		Cross: (s, c, t) => `<div style="position:relative;width:${s}px;height:${s}px">
-      <div style="position:absolute;left:50%;top:0;transform:translateX(-50%);width:${t}px;height:100%;background:${c}"></div>
-      <div style="position:absolute;top:50%;left:0;transform:translateY(-50%);height:${t}px;width:100%;background:${c}"></div>
-    </div>`,
+			<div style="position:absolute;left:50%;top:0;transform:translateX(-50%);width:${t}px;height:100%;background:${c}"></div>
+			<div style="position:absolute;top:50%;left:0;transform:translateY(-50%);height:${t}px;width:100%;background:${c}"></div>
+			</div>`,
 		Circle: (s, c, t) => `<div style="width:${s}px;height:${s}px;border-radius:50%;border:${t}px solid ${c};box-sizing:border-box"></div>`,
 		CircleWithDot: (s, c, t) => `
             <div style="position:relative;width:${s}px;height:${s}px;border:${t}px solid ${c};border-radius:50%;">
                 <div style="position:absolute;top:50%;left:50%;width:${s / 5}px;height:${s / 5}px;background:${c};border-radius:50%;transform:translate(-50%,-50%);"></div>
             </div>`,
-
         XShaped: (s, c, t) => `
             <div style="position:relative;width:${s}px;height:${s}px;">
                 <div style="position:absolute;width:${t}px;height:100%;background:${c};transform:rotate(45deg);left:50%;top:0;transform-origin:center;"></div>
@@ -406,7 +405,7 @@ function GUI(utils) {
 			}));
 
 			contentEl.appendChild(utils.el('div', {
-				html: 'Reload to apply changes'
+				html: 'Reload to apply changes<br>Order: AR, SMG, AWP, Shotgun'
 			}));
 
 			const weapons = [
@@ -819,7 +818,6 @@ function GUI(utils) {
 
 	function updateGif() {
 		ensureOverlays();
-		console.log(settings.showAnimeGif);
 		const raw = settings.animeGifPath || "anime.gif";
 		const abs = resolvePath(raw, _payload.base);
 		const full = "file:///" + abs.replace(/\\/g, "/");
@@ -869,31 +867,40 @@ function GUI(utils) {
 		if (!settings.showOverlay) updateOverlay("keyDisplayOverlay")
 		if (!settings.showStats) updateOverlay("dsOverlayStats")
 	}
-	async function fetchLeaderboardRank(username) {
 
+	async function fetchLeaderboardRank(username) {
 		try {
 			const response = await fetch('https://login.deadshot.io/leaderboards');
 			const data = await response.json();
-			const categories = ["daily", "weekly", "alltime"];
+			const categories = ["daily", "weekly", "all"];
 			const result = {};
 
 			for (const category of categories) {
-				if (data[category] && data[category].kills) {
-					const leaderboard = data[category].kills;
-					leaderboard.sort((a, b) => b.kills - a.kills);
-					const player = leaderboard.find(p => p.name === username);
-					result[category] = player ? `#${leaderboard.indexOf(player) + 1}` : "Not found";
-				} else {
-					result[category] = "Not found";
-				}
+				result[category] = {};
 
+				for (const stat of ["kills", "wins"]) {
+					if (data[category]?.[stat]) {
+						const leaderboard = [...data[category][stat]].sort((a, b) => b[stat] - a[stat]);
+						const idx = leaderboard.findIndex(p => p.name === username);
+						result[category][stat] = idx !== -1 ? `#${idx + 1}` : "Not ranked";
+					} else {
+						result[category][stat] = "Not found";
+					}
+				}
 			}
-			return `Daily: ${result.daily}\nWeekly: ${result.weekly}\nAll-time: ${result.alltime}`;
+
+			return [
+				`Daily - Kills: ${result.daily.kills} - Wins: ${result.daily.wins}`,
+				`Weekly - Kills: ${result.weekly.kills} - Wins: ${result.weekly.wins}`,
+				`All-time - Kills: ${result.all.kills} - Wins: ${result.all.wins}`,
+			].join("\n");
+
 		} catch (error) {
 			console.error('Error fetching leaderboard:', error);
 			return "Daily: Error\nWeekly: Error\nAll-time: Error";
 		}
 	}
+	
 	function getRank() {
 		const overlay = document.createElement('div');
 		overlay.style.cssText = `
@@ -910,68 +917,99 @@ function GUI(utils) {
 
 		const box = document.createElement('div');
 		box.style.cssText = `
-			background: #1e1e1e;
-			padding: 30px;
+			background: var(--ov-bg);
+			border: 2px solid var(--ov-accent);
+			padding: 20px;
 			border-radius: 12px;
-			box-shadow: 0 0 20px rgba(0,0,0,0.5);
-			text-align: center;
-			color: ${theme.text1};
-			min-width: 260px;
+			box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+			color: var(--ov-text);
+			min-width: 280px;
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+			font-family: 'DM Sans', sans-serif;
 		`;
 
-		const label = document.createElement('div');
-		label.textContent = 'Enter your username:';
-		label.style.cssText = `
-			margin-bottom: 10px;
-			font-size: 15px;
-			opacity: 0.9;
+		const header = document.createElement('div');
+		header.style.cssText = `
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding-bottom: 10px;
+			border-bottom: 1px solid rgba(255,255,255,0.06);
+			margin-bottom: 4px;
 		`;
+
+		const title = document.createElement('span');
+		title.textContent = 'Rank Lookup';
+		title.style.cssText = `font-size: 14px; font-weight: 600; color: var(--ov-text);`;
+
+		const closeBtn = document.createElement('button');
+		closeBtn.textContent = '✕';
+		closeBtn.style.cssText = `
+			background: none;
+			border: none;
+			color: var(--ov-text);
+			cursor: pointer;
+			font-size: 14px;
+			opacity: 0.5;
+			line-height: 1;
+			padding: 0;
+			transition: opacity 0.15s;
+		`;
+		closeBtn.addEventListener('mouseenter', () => closeBtn.style.opacity = '1');
+		closeBtn.addEventListener('mouseleave', () => closeBtn.style.opacity = '0.5');
+		closeBtn.addEventListener('click', () => document.body.removeChild(overlay));
+
+		header.appendChild(title);
+		header.appendChild(closeBtn);
+
+		const label = document.createElement('label');
+		label.textContent = 'Username';
+		label.style.cssText = `font-size: 12px; opacity: 0.6;`;
 
 		const input = document.createElement('input');
 		input.type = 'text';
+		input.placeholder = 'Enter username...';
+		input.className = 'ov-input';
 		input.style.cssText = `
-			padding: 10px;
+			padding: 6px;
 			border-radius: 6px;
-			border: none;
-			width: 100%;
-			max-width: 220px;
-			margin-bottom: 12px;
-			font-size: 16px;
+			border: 1px solid rgba(255,255,255,0.06);
+			background: var(--ov-panel);
+			color: var(--ov-text);
+			font-size: 14px;
 			outline: none;
+			width: 100%;
+			font-family: 'DM Sans', sans-serif;
 		`;
 
 		const submit = document.createElement('button');
-		submit.textContent = 'Submit';
+		submit.textContent = 'Look up';
+		submit.className = 'ov-btn';
 		submit.style.cssText = `
-			padding: 10px 22px;
-			border: none;
+			padding: 6px 8px;
 			border-radius: 6px;
-			background: #4CAF50;
-			color: ${theme.text1};
+			border: none;
+			background: var(--ov-accent);
+			color: #031133;
 			cursor: pointer;
-			font-size: 16px;
-			transition: background 0.15s ease, transform 0.05s ease;
+			font-size: 14px;
+			font-family: 'DM Sans', sans-serif;
+			transition: opacity 0.15s, transform 0.05s;
+			align-self: flex-end;
 		`;
+		submit.addEventListener('mouseenter', () => submit.style.opacity = '0.85');
+		submit.addEventListener('mouseleave', () => submit.style.opacity = '1');
+		submit.addEventListener('mousedown', () => submit.style.transform = 'scale(0.97)');
+		submit.addEventListener('mouseup', () => submit.style.transform = 'scale(1)');
 
-		submit.addEventListener('mouseenter', () => {
-			submit.style.background = '#43a047';
-		});
-
-		submit.addEventListener('mouseleave', () => {
-			submit.style.background = '#4CAF50';
-		});
-
-		submit.addEventListener('mousedown', () => {
-			submit.style.transform = 'scale(0.97)';
-		});
-
-		submit.addEventListener('mouseup', () => {
-			submit.style.transform = 'scale(1)';
-		});
-
-		submit.addEventListener('click', async () => {
+		const handleSubmit = async () => {
 			const username = input.value.trim();
 			if (!username) return;
+
+			submit.textContent = '...';
+			submit.disabled = true;
 
 			try {
 				const rank = await fetchLeaderboardRank(username);
@@ -982,8 +1020,20 @@ function GUI(utils) {
 				alert('Failed to fetch rank');
 				document.body.removeChild(overlay);
 			}
+		};
+
+		submit.addEventListener('click', handleSubmit);
+
+		input.addEventListener('keydown', (e) => {
+			if (e.key === 'Enter') handleSubmit();
+			if (e.key === 'Escape') document.body.removeChild(overlay);
 		});
 
+		overlay.addEventListener('click', (e) => {
+			if (e.target === overlay) document.body.removeChild(overlay);
+		});
+
+		box.appendChild(header);
 		box.appendChild(label);
 		box.appendChild(input);
 		box.appendChild(submit);

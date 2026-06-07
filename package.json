@@ -1,12 +1,12 @@
 {
-  "name": "deadshot-viewer",
-  "version": "1.0.0",
+  "name": "omniverse",
+  "version": "0.86",
   "description": "Omniverse Client",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
     "dist-win": "electron-packager . omniverse --platform=win32 --arch=x64 --out=../omniverse-dist --overwrite --no-asar",
-    "dist-linux": "electron-packager . omniverse --platform=linux --arch=x64 --out=dist --overwrite --no-asar"
+    "dist-linux": "electron-packager . omniverse --platform=linux --arch=x64 --out=../omniverse-dist --overwrite --no-asar"
   },
 
   "devDependencies": {
