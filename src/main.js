@@ -301,6 +301,7 @@ app.whenReady().then(() => {
         const resourceFilter = {
             urls: [
                 "*://deadshot.io/weapons/*",
+                "*://matchmaking.deadshot.io/attest",
                 "*://deadshot.io/skins/*",
                 "*://deadshot.io/promo/*",
                 "*://deadshot.io/textures/*",
@@ -314,7 +315,6 @@ app.whenReady().then(() => {
 
         let loginInFlight = false;
         
-        /* Intercepting the login JSON to inject skins. Tree didn't like this */
         session.defaultSession.webRequest.onBeforeRequest(resourceFilter, (reqDetails, next) => {
             const url = new URL(reqDetails.url);
 
@@ -348,8 +348,8 @@ app.whenReady().then(() => {
                     }
 
                     try {
-                        const json = JSON.parse(text);
-
+                        const response = JSON.parse(text);
+                        const json = JSON.parse(Buffer.from(response.d, "base64").toString("utf8"));
                         const selectedSkins = settings.selectedSkins ?? {};
                         for (const [weapon, skinName] of Object.entries(selectedSkins)) {
                             if (!skinName || skinName === "default") continue;
