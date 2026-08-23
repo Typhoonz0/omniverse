@@ -77,6 +77,7 @@ function GUI(utils) {
 		"neonpulse": "Neon Pulse (not out yet)",
 		"neon": "Neon",
 		"winter": "Winter '22",
+		"cloudy": "Cloudy",
 		"winter2024": "Winter '24",
 		"hallow22": "HLWN '22",
 		"hlwn": "HLWN '23",
