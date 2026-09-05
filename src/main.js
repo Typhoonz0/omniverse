@@ -270,7 +270,7 @@ app.whenReady().then(() => {
         return finalResponse;
     });
 
-    if (false) {
+    if (settings.swapper) {
         protocol.handle("custom", async (req) => {
             const relativePath = req.url.slice(9);
             const localPath = path.join(__dirname, "swap", relativePath);
@@ -317,71 +317,6 @@ app.whenReady().then(() => {
         
         session.defaultSession.webRequest.onBeforeRequest(resourceFilter, (reqDetails, next) => {
             const url = new URL(reqDetails.url);
-
-            if (url.href.includes("login.deadshot.io/login")) {
-                if (loginInFlight) {
-                    next({ cancel: false });
-                    return;
-                }
-
-                loginInFlight = true;
-
-                let bodyBuffer = null;
-                if (reqDetails.uploadData?.[0]?.bytes) {
-                    bodyBuffer = Buffer.from(reqDetails.uploadData[0].bytes);
-                }
-
-                net.fetch(reqDetails.url, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: bodyBuffer,
-                })
-                .then((res) => {
-                    return res.text();
-                })
-                .then((text) => {
-                    loginInFlight = false;
-
-                    if (!text || text.trim() === "" || text.trim() === '""') {
-                        next({ cancel: false });
-                        return;
-                    }
-
-                    try {
-                        const response = JSON.parse(text);
-                        const json = JSON.parse(Buffer.from(response.d, "base64").toString("utf8"));
-                        const selectedSkins = settings.selectedSkins ?? {};
-                        for (const [weapon, skinName] of Object.entries(selectedSkins)) {
-                            if (!skinName || skinName === "default") continue;
-
-                            const skinObj = { name: skinName, weapon, wear: 0 };
-
-                            if (!json.skins.some(s => s.name === skinName && s.weapon === weapon)) {
-                                json.skins.push(skinObj);
-                            }
-
-                            const idx = json.equippedSkins.findIndex(s => s.weapon === weapon);
-                            if (idx !== -1) {
-                                json.equippedSkins[idx] = skinObj;
-                            } else {
-                                json.equippedSkins.push(skinObj);
-                            }
-                        }
-
-                        fs.writeFileSync(LOGIN_CACHE, JSON.stringify(json, null, 2));
-
-                        next({ redirectURL: "modified://login" });
-                    } catch (e) {
-                        next({ cancel: false });
-                    }
-                })
-                .catch((e) => {
-                    loginInFlight = false;
-                    next({ cancel: false });
-                });
-
-                return;
-            }
 
             const fileName = path.basename(new URL(reqDetails.url).pathname);
             const swapRoot = path.join(__dirname, "swap");
