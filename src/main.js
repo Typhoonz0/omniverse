@@ -270,7 +270,7 @@ app.whenReady().then(() => {
         return finalResponse;
     });
 
-    if (settings.swapper) {
+    if (false) {
         protocol.handle("custom", async (req) => {
             const relativePath = req.url.slice(9);
             const localPath = path.join(__dirname, "swap", relativePath);
