@@ -8,7 +8,7 @@
 <div align="center">
   <img src="github/new.png" height="270">
   <br>
-  <i>Preview of Omniverse 0.85's Default Config</i> 
+  <i>Preview of Omniverse 0.86.12's Default Config</i> 
 </div>
 
 > [!TIP]
