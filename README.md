@@ -32,7 +32,6 @@ npm start
 ```
 
 ## Features:
-- [x] Use any skin in the game (e.g. Matrix, Neon, 1st Birthday)
 - [x] FPS Uncapper
 - [x] Keys Overlay - WASD C, R, Left/Right click 
 - [x] PC Stats - Just FPS + Ping or with Platform + CPU Cores
