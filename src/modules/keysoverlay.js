@@ -15,17 +15,20 @@ function KeysOverlay(utils, theme) {
         'mouseleft': 'LMB',
         'mouseright': 'RMB'
     };
+
+    const RED1 = 'var(--ov-red1, #8da4ff)';
+    const RED2 = 'var(--ov-red2, #8da4ff)';
     const keyColors = {
-        'w': theme.red1,
-        'a': theme.red1,
-        's': theme.red1,
-        'd': theme.red1,
-        'r': theme.red2,
-        ' ': theme.red2,
-        'shift': theme.red2,
-        'f': theme.red2,
-        'mouseleft': theme.red2,
-        'mouseright': theme.red2
+        'w': RED1,
+        'a': RED1,
+        's': RED1,
+        'd': RED1,
+        'r': RED2,
+        ' ': RED2,
+        'shift': RED2,
+        'f': RED2,
+        'mouseleft': RED2,
+        'mouseright': RED2
     };
 
     const styleKeys = `
@@ -39,7 +42,7 @@ function KeysOverlay(utils, theme) {
         background: rgba(0, 0, 0, 0.4);
         padding: 12px;
         border-radius: 10px;
-        border: 3px solid #${theme.red1};
+        border: 3px solid ${RED1};
         z-index: 99999;
         cursor: move;
     }
@@ -53,7 +56,7 @@ function KeysOverlay(utils, theme) {
         border-radius: 6px;
         font-size: 16px;
         font-weight: bold;
-        color: ${theme.text1};
+        color: var(--ov-text2, #fff);
         background-color: transparent;
         transition: background-color 0.15s, transform 0.15s, box-shadow 0.15s;
         user-select: none;
@@ -80,38 +83,25 @@ function KeysOverlay(utils, theme) {
         keyContainer.appendChild(d);
         keyElements[lower] = {
             el: d,
-            color: keyColors[lower] || theme.red2
+            color: keyColors[lower] || RED2
         };
     });
 
     function handleKey(action, key) {
         const entry = keyElements[key];
         if (!entry) return;
-        const {
-            el: e,
-            color
-        } = entry;
+        const { el: e, color } = entry;
         if (action === 'down') {
             e.classList.add('pressed');
-            e.style.backgroundColor = color;
+            e.style.backgroundColor = color;   
         } else {
             e.classList.remove('pressed');
             e.style.backgroundColor = 'transparent';
         }
     }
 
-    window.addEventListener('keydown', (ev) => {
-        const k = ev.key.toLowerCase();
-        if (k === ' ') handleKey('down', ' ');
-        else if (k === 'shift') handleKey('down', 'shift');
-        else handleKey('down', k);
-    });
-    window.addEventListener('keyup', (ev) => {
-        const k = ev.key.toLowerCase();
-        if (k === ' ') handleKey('up', ' ');
-        else if (k === 'shift') handleKey('up', 'shift');
-        else handleKey('up', k);
-    });
+    window.addEventListener('keydown', (ev) => handleKey('down', ev.key.toLowerCase()));
+    window.addEventListener('keyup', (ev) => handleKey('up', ev.key.toLowerCase()));
 
     window.addEventListener('mousedown', (e) => {
         if (e.button === 0) handleKey('down', 'mouseleft');
@@ -125,7 +115,6 @@ function KeysOverlay(utils, theme) {
     utils.makeDraggable(keyContainer, {
         storageKey: 'keyDisplayOverlay'
     });
-
 }
 
 module.exports = { KeysOverlay };

@@ -1,8 +1,4 @@
 function GUI(utils) {
-	function resolvePath(raw, base) {
-		if (raw.startsWith("/") || /^[A-Za-z]:[\\/]/.test(raw)) return raw;
-		return base + "/" + raw;
-	}
 
 	utils.injectStyle(css);
 
@@ -90,26 +86,17 @@ function GUI(utils) {
 	}, {
 		id: 'stats',
 		label: 'Stats'
-	}, {
-		id: 'keys',
-		label: 'Keys'
-	}, {
+    }, {
 		id: 'cross',
 		label: 'Crosshair'
 	},
-	 {
-		id: 'skins',
-		label: 'Skins'
-	}, {
+    {
 		id: 'gif',
 		label: 'GIF'
 	}, {
 		id: 'theme',
 		label: 'Theme'
-	}, {
-		id: 'settings',
-		label: 'Settings'
-	}, {
+	},{
 		id: 'other',
 		label: 'Other'
 	}];
@@ -193,7 +180,17 @@ function GUI(utils) {
 				settings.swapper = v;
 				save();
 			}));
-
+			const discordRPC = utils.el('div', {
+				cls: 'ov-row'
+			});
+			discordRPC.appendChild(utils.el('label', {
+				text: 'Discord RPC'
+			}));
+			discordRPC.appendChild(makeToggle(settings.rpc, v => {
+				settings.rpc = v;
+				save();
+			}));
+			contentEl.appendChild(discordRPC);
 			const fullscreenRow = utils.el('div', {
 				cls: 'ov-row'
 			});
@@ -308,10 +305,6 @@ function GUI(utils) {
 				key: "showCPU"
 			},
 			{
-				label: "Show Server",
-				key: "showServer"
-			},
-			{
 				label: "Show Sens",
 				key: "showSens"
 			},
@@ -339,65 +332,7 @@ function GUI(utils) {
 			});
 		}
 
-		if (activeTab === 'keys') {
-			contentEl.appendChild(utils.el('div', {
-				html: '<strong>Keys Overlay</strong>'
-			}));
-
-			const enRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			enRow.appendChild(utils.el('label', {
-				text: 'Enable'
-			}));
-			enRow.appendChild(makeToggle(settings.showOverlay, v => {
-				settings.showOverlay = v;
-				save();
-				updateOverlay("keyDisplayOverlay");
-			}));
-			contentEl.appendChild(enRow);
-
-			const movRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			movRow.appendChild(utils.el('label', {
-				text: 'Movement Keys Color (Reload Client)'
-			}));
-			const movInp = utils.el('input', {
-				attrs: {
-					type: 'color',
-					value: settings.themeData?.red1 || '#8da4ff'
-				}
-			});
-			movInp.addEventListener('input', e => {
-				settings.themeData = settings.themeData || {};
-				settings.themeData.red1 = e.target.value;
-				save();
-			});
-			movRow.appendChild(movInp);
-			contentEl.appendChild(movRow);
-
-			const actRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			actRow.appendChild(utils.el('label', {
-				text: 'Actions Keys Color (Reload Client)'
-			}));
-			const actInp = utils.el('input', {
-				attrs: {
-					type: 'color',
-					value: settings.themeData?.red2 || '#8da4ff'
-				}
-			});
-			actInp.addEventListener('input', e => {
-				settings.themeData = settings.themeData || {};
-				settings.themeData.red2 = e.target.value;
-				save();
-			});
-			actRow.appendChild(actInp);
-			contentEl.appendChild(actRow);
-		}
-
+/*
 		if (activeTab === 'skins') {
 			console.log('activeTab:', activeTab);
 
@@ -442,6 +377,7 @@ function GUI(utils) {
 				contentEl.appendChild(row);
 			});
 		}
+*/
 		if (activeTab === 'cross') {
 			contentEl.appendChild(utils.el('div', {
 				html: '<strong>Crosshair Editor</strong>'
@@ -615,17 +551,17 @@ function GUI(utils) {
 				cls: 'ov-row'
 			});
 			textRow.appendChild(utils.el('label', {
-				text: 'Overlay Text Color (Reload Client)'
+				text: 'Overlay Text Color'
 			}));
 			const textInp = utils.el('input', {
 				attrs: {
 					type: 'color',
-					value: settings.themeData?.text1 || '#8da4ff'
+					value: settings.themeData?.text3 || '#8da4ff'
 				}
 			});
 			textInp.addEventListener('input', e => {
 				settings.themeData = settings.themeData || {};
-				settings.themeData.text1 = e.target.value;
+				settings.themeData.text3 = e.target.value;
 				applyTheme(settings.themeData);
 				save();
 			});
@@ -654,12 +590,53 @@ function GUI(utils) {
 			});
 			bgRow.appendChild(bgInp);
 			contentEl.appendChild(bgRow);
+
+			const movRow = utils.el('div', {
+				cls: 'ov-row'
+			});
+			movRow.appendChild(utils.el('label', {
+				text: 'Movement Keys Color'
+			}));
+			const movInp = utils.el('input', {
+				attrs: {
+					type: 'color',
+					value: settings.themeData?.red1 || '#8da4ff'
+				}
+			});
+			movInp.addEventListener('input', e => {
+				settings.themeData = settings.themeData || {};
+				settings.themeData.red1 = e.target.value;
+				applyTheme(settings.themeData);
+				save();
+			});
+			movRow.appendChild(movInp);
+			contentEl.appendChild(movRow);
+
+			const actRow = utils.el('div', {
+				cls: 'ov-row'
+			});
+			actRow.appendChild(utils.el('label', {
+				text: 'Actions Keys Color'
+			}));
+			const actInp = utils.el('input', {
+				attrs: {
+					type: 'color',
+					value: settings.themeData?.red2 || '#8da4ff'
+				}
+			});
+			actInp.addEventListener('input', e => {
+				settings.themeData = settings.themeData || {};
+				settings.themeData.red2 = e.target.value;
+				applyTheme(settings.themeData);
+				save();
+			});
+			actRow.appendChild(actInp);
+			contentEl.appendChild(actRow);
 		}
 
-		if (activeTab === 'settings') {
-			contentEl.appendChild(utils.el('div', {
-				html: '<strong>Settings & Hotkeys</strong>'
-			}));
+		if (activeTab === 'other') {
+
+			const fmtKey = k => (k === ' ' ? 'Space' : k || '');
 
 			const kb = utils.el('div', {
 				cls: 'ov-row',
@@ -671,65 +648,35 @@ function GUI(utils) {
 			});
 
 			kb.appendChild(utils.el('label', {
-				text: 'Toggle Key'
+				text: 'Toggle Key (click then press a key)'
 			}));
 
 			const i = utils.el('input', {
 				cls: 'ov-input',
 				attrs: {
 					type: 'text',
-					value: settings.toggleKey || ''
+					value: fmtKey(settings.toggleKey),
+					placeholder: 'Press a key...'
 				}
 			});
+			i.readOnly = true;
 
-			i.onchange = e => {
-				settings.toggleKey = e.target.value.trim();
-				document.getElementById('ov-toggle-key').textContent = settings.toggleKey;
+			i.addEventListener('keydown', e => {
+				e.preventDefault();     
+				e.stopPropagation();   
+
+				if (e.key === 'Escape') { i.blur(); return; }  
+
+				settings.toggleKey = e.key;
+				i.value = fmtKey(e.key);
+				document.getElementById('ov-toggle-key').textContent = fmtKey(e.key);
 				save();
-			};
+				i.blur();
+			});
 
 			kb.appendChild(i);
 			contentEl.appendChild(kb);
 
-			const r = utils.el('div', {
-				style: {
-					display: 'flex',
-					gap: '8px'
-				}
-			});
-
-			r.appendChild(utils.el('button', {
-				text: 'Save',
-				cls: 'ov-btn',
-				listeners: {
-					click: () => {
-						save(true);
-						alert('Settings saved');
-					}
-				}
-			}));
-
-			r.appendChild(utils.el('button', {
-				text: 'Reset',
-				cls: 'ov-btn',
-				listeners: {
-					click: () => {
-						if (confirm('Reset to defaults?')) {
-							settings = Object.assign({}, DEFAULTS);
-							save(true);
-							renderContent();
-							updateCrosshair();
-							updateOverlay();
-							updateGif();
-						}
-					}
-				}
-			}));
-
-			contentEl.appendChild(r);
-		}
-
-		if (activeTab === 'other') {
 			const rankRow = utils.el('div', { cls: 'ov-row' });
 			rankRow.appendChild(utils.el('label', { text: 'Player Rank' }));
 			const rankBtn = utils.el('button', {
@@ -766,8 +713,12 @@ function GUI(utils) {
 
 	function applyTheme(td) {
 		if (!td) return;
-		if (td.accent) document.documentElement.style.setProperty('--ov-accent', td.accent);
-		if (td.bgOpacity !== undefined) document.documentElement.style.setProperty('--ov-bg', `rgba(12,12,12,${td.bgOpacity})`);
+		const root = document.documentElement.style;
+		if (td.accent) root.setProperty('--ov-accent', td.accent);
+		if (td.text3) root.setProperty('--ov-text', td.text3);
+		if (td.red1) root.setProperty('--ov-red1', td.red1);
+		if (td.red2) root.setProperty('--ov-red2', td.red2);
+		if (td.bgOpacity !== undefined) root.setProperty('--ov-bg', `rgba(12,12,12,${td.bgOpacity})`);
 	}
 	if (settings.themeData) applyTheme(settings.themeData);
 
@@ -820,8 +771,7 @@ function GUI(utils) {
 	function updateGif() {
 		ensureOverlays();
 		const raw = settings.animeGifPath || "anime.gif";
-		const abs = resolvePath(raw, _payload.base);
-		const full = "file:///" + abs.replace(/\\/g, "/");
+		const full = "custom://" + raw.replace(/\\/g, "/");
 
 		const existing = document.getElementById("customGifEl");
 		if (existing) existing.remove();
