@@ -1,15 +1,15 @@
 {
   "toggleKey": "o",
-  "showOverlay": true,
+  "showOverlay": false,
   "showStats": true,
-  "crossEnable": true,
+  "crossEnable": false,
   "crossColor": "#ff4de7",
   "crossSize": 4,
   "crossThickness": 2,
   "crossType": "Dot",
   "showAnimeGif": false,
   "animeGifPath": "",
-  "animeGifScale": 0.75,
+  "animeGifScale": 0.7,
   "themeData": {
     "accent": "#8da4ff",
     "text2": "#ffffff",

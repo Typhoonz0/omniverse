@@ -26,12 +26,9 @@ protocol.registerSchemesAsPrivileged([
         scheme: "custom",
         privileges: { secure: true, standard: true, supportFetchAPI: true },
     },
-    {
-        scheme: "modified",
-        privileges: { secure: true, standard: true, supportFetchAPI: true },
-    },
 ]);
 
+/** Electron is very stupid and changes what __dirname is depending on where the .exe is located. **/
 function resolveBase(startDir) {
     function findFolder(dir, name) {
         while (!fs.existsSync(path.join(dir, name)) && path.dirname(dir) !== dir) {
@@ -63,7 +60,8 @@ function loadSettings() {
     try {
         return JSON.parse(fs.readFileSync(settingsPath, "utf8"));
     } catch {
-        return { selectedSkins: {} };
+        console.error("settings.json couldnt be loaded");
+        return {};
     }
 }
 
@@ -75,7 +73,7 @@ if (settings.forceHighPerformanceGPU)
     app.commandLine.appendSwitch("force_high_performance_gpu");
 
 ipcMain.handle("get-settings", () => settings);
-
+ipcMain.handle("get-version", () => version);
 ipcMain.handle("save-settings", (event, newSettings) => {
     try {
         Object.assign(settings, newSettings);
@@ -139,65 +137,82 @@ function findFileRecursive(baseDir, targetName) {
     return null;
 }
 
-function stripModuleExports(code) {
-    return code.replace(/^\s*module\.exports\s*=\s*.+;?\s*$/gm, "");
-}
+
 
 /* Tree decided to break all clients with nodeintegration meaning I can't use 
 Javascript's "module" imports, meaning I have to build the payload from scratch */
 
 function buildRendererScript(payload, modules) {
-    const p = JSON.stringify(payload);
-    const utilsCode = stripModuleExports(modules.utilsCode);
-    const statsCode = stripModuleExports(modules.statsCode);
-    const keysCode = stripModuleExports(modules.keysCode);
-    const guiCode = stripModuleExports(modules.guiCode);
+    const serializedPayload = JSON.stringify(payload);
 
-    return [
-        "(() => {",
-        "const _payload = " + p + ";",
-        "const selectedSkins = _payload.selectedSkins ?? {};",
-        "const theme = _payload.themeData ?? null;",
-        "const version = _payload.version ?? 'Unknown';",
-        "const css = _payload.css ?? '';",
-        "const settings = _payload.settings ?? {};",
-        "const base = _payload.base ?? '';",
-        "function readSettings() { return settings; }",
-        "function writeSettings(obj) { Object.assign(settings, obj); window.omniverse.saveSettings(obj); }",
-        utilsCode,
-        statsCode,
-        keysCode,
-        guiCode,
-        "const _style = document.createElement('style');",
-        "_style.textContent = css;",
-        "document.head.appendChild(_style);",
-        "StatsOverlay(utils, theme);",
-        "KeysOverlay(utils, theme);",
-        "GUI(utils);",
-        "const _watermark = document.createElement('div');",
-        "_watermark.textContent = 'Omniverse v' + version;",
-        "Object.assign(_watermark.style, {",
-        "  position: 'fixed', bottom: '8px', left: '8px', opacity: '0.3',",
-        "  color: '#fff', fontSize: '15px', zIndex: '999999',",
-        "  pointerEvents: 'none', userSelect: 'none',",
-        "  textShadow: '1px 1px 2px rgba(0,0,0,0.6)',",
-        "  fontFamily: 'DM Sans, sans-serif',",
-        "});",
-        "document.body.appendChild(_watermark);",
-        "fetch('https://raw.githubusercontent.com/Typhoonz0/omniverse/refs/heads/main/version.txt')",
-        "  .then(r => r.text())",
-        "  .then(latest => {",
-        "    const remote = latest.trim();",
-        "    if (remote && remote !== version) {",
-        "      _watermark.textContent = 'Omniverse v' + version + ' - new update at xliam.xyz/omniverse';",
-        "    }",
-        "  })",
-        "  .catch(() => {});",
-        "})();",
-    ].join("\n");
+    return `
+        (() => {
+            const _payload = ${serializedPayload};
+
+            const selectedSkins = _payload.selectedSkins ?? {};
+            const theme = _payload.themeData ?? null;
+            const version = _payload.version ?? "Unknown";
+            const css = _payload.css ?? "";
+            const settings = _payload.settings ?? {};
+            const base = _payload.base ?? "";
+
+            function readSettings() {
+                return settings;
+            }
+
+            function writeSettings(obj) {
+                Object.assign(settings, obj);
+                window.omniverse.saveSettings(obj);
+            }
+
+            ${modules}
+
+            const _style = document.createElement("style");
+            _style.textContent = css;
+            document.head.appendChild(_style);
+
+            StatsOverlay(utils, theme);
+            KeysOverlay(utils, theme);
+            GUI(utils);
+
+            const _watermark = document.createElement("div");
+            _watermark.textContent = "Omniverse v" + version;
+
+            Object.assign(_watermark.style, {
+                position: "fixed",
+                bottom: "8px",
+                left: "8px",
+                opacity: "0.3",
+                color: "#fff",
+                fontSize: "15px",
+                zIndex: "999999",
+                pointerEvents: "none",
+                userSelect: "none",
+                textShadow: "1px 1px 2px rgba(0,0,0,0.6)",
+                fontFamily: "DM Sans, sans-serif",
+            });
+
+            document.body.appendChild(_watermark);
+
+            fetch(
+                "https://raw.githubusercontent.com/Typhoonz0/omniverse/refs/heads/main/version.txt"
+            )
+                .then((response) => response.text())
+                .then((latest) => {
+                    const remote = latest.trim();
+
+                    if (remote && remote !== version) {
+                        _watermark.textContent =
+                            "Omniverse v" +
+                            version +
+                            " - new update at xliam.xyz/omniverse";
+                    }
+                })
+                .catch(() => {});
+        })();
+        `.trim();
 }
 
-const LOGIN_CACHE = path.join(__dirname, "login-cache.json");
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -233,15 +248,19 @@ function createWindow() {
         const css = fs.readFileSync(path.join(base, "modules", "style.css"), "utf8");
 
         const payload = {
-            selectedSkins: settings.selectedSkins ?? {},
-            themeData: settings.themeData ?? null,
+            themeData: settings.themeData,
             version,
             css,
             settings,
             base,
         };
 
-        const script = buildRendererScript(payload, { utilsCode, statsCode, keysCode, guiCode });
+        const script = buildRendererScript(payload, [
+            utilsCode,
+            statsCode,
+            keysCode,
+            guiCode
+        ].join("\n"));
 
         win.webContents
             .executeJavaScript(script)
@@ -285,19 +304,6 @@ app.whenReady().then(() => {
             }
         });
 
-        protocol.handle("modified", () => {
-            try {
-                const data = fs.readFileSync(LOGIN_CACHE, "utf8");
-                return new Response(data, {
-                    headers: { "Content-Type": "application/json" },
-                });
-            } catch (err) {
-                return new Response("{}", {
-                    headers: { "Content-Type": "application/json" },
-                });
-            }
-        });
-
         const resourceFilter = {
             urls: [
                 "*://deadshot.io/weapons/*",
@@ -312,12 +318,8 @@ app.whenReady().then(() => {
                 "*://login.deadshot.io/login",
             ],
         };
-
-        let loginInFlight = false;
         
         session.defaultSession.webRequest.onBeforeRequest(resourceFilter, (reqDetails, next) => {
-            const url = new URL(reqDetails.url);
-
             const fileName = path.basename(new URL(reqDetails.url).pathname);
             const swapRoot = path.join(__dirname, "swap");
             let foundFile = null;

@@ -111,4 +111,3 @@ function StatsOverlay(utils, theme) {
 
     utils.makeDraggable(overlayStats, { storageKey: 'dsOverlayStats' });
 }
-module.exports = { StatsOverlay };

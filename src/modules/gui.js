@@ -14,34 +14,12 @@ function GUI(utils) {
             <div style="position:relative;width:${s}px;height:${s}px;border:${t}px solid ${c};border-radius:50%;">
                 <div style="position:absolute;top:50%;left:50%;width:${s / 5}px;height:${s / 5}px;background:${c};border-radius:50%;transform:translate(-50%,-50%);"></div>
             </div>`,
-        XShaped: (s, c, t) => `
+		XShaped: (s, c, t) => `
             <div style="position:relative;width:${s}px;height:${s}px;">
                 <div style="position:absolute;width:${t}px;height:100%;background:${c};transform:rotate(45deg);left:50%;top:0;transform-origin:center;"></div>
                 <div style="position:absolute;width:${t}px;height:100%;background:${c};transform:rotate(-45deg);left:50%;top:0;transform-origin:center;"></div>
             </div>`,
 	};
-
-	const gui = utils.el('div', {
-		attrs: {
-			id: 'ovGui'
-		}
-	});
-	const header = utils.el('header');
-	header.innerHTML = `<div style="font-weight:700">Omniverse | xliam.xyz</div><div style="opacity:0.9">Toggle: <span id="ov-toggle-key">${settings.toggleKey}</span></div>`;
-	gui.appendChild(header);
-
-	const wrap = utils.el('div', {
-		cls: 'wrap'
-	});
-	const tabsEl = utils.el('div', {
-		cls: 'tabs'
-	});
-	const contentEl = utils.el('div', {
-		cls: 'content'
-	});
-	wrap.appendChild(tabsEl);
-	wrap.appendChild(contentEl);
-	gui.appendChild(wrap);
 
 	const SKIN_OPTIONS = {
 		"default": "Default",
@@ -80,27 +58,28 @@ function GUI(utils) {
 		"summer": "Summer '24",
 		"birthday": "1st Birthday"
 	};
-	const TABS = [{
-		id: 'main',
-		label: 'Main'
-	}, {
-		id: 'stats',
-		label: 'Stats'
-    }, {
-		id: 'cross',
-		label: 'Crosshair'
-	},
-    {
-		id: 'gif',
-		label: 'GIF'
-	}, {
-		id: 'theme',
-		label: 'Theme'
-	},{
-		id: 'other',
-		label: 'Other'
-	}];
+
+	const TABS = [
+		{ id: 'main', label: 'Main' },
+		{ id: 'stats', label: 'Stats' },
+		{ id: 'cross', label: 'Crosshair' },
+		{ id: 'gif', label: 'GIF' },
+		{ id: 'theme', label: 'Theme' },
+		{ id: 'other', label: 'Other' },
+	];
 	let activeTab = 'main';
+
+	const gui = utils.el('div', { attrs: { id: 'ovGui' } });
+	const header = utils.el('header');
+	header.innerHTML = `<div style="font-weight:700">Omniverse | xliam.xyz</div><div style="opacity:0.9">Toggle: <span id="ov-toggle-key">${settings.toggleKey}</span></div>`;
+	gui.appendChild(header);
+
+	const wrap = utils.el('div', { cls: 'wrap' });
+	const tabsEl = utils.el('div', { cls: 'tabs' });
+	const contentEl = utils.el('div', { cls: 'content' });
+	wrap.appendChild(tabsEl);
+	wrap.appendChild(contentEl);
+	gui.appendChild(wrap);
 
 	function createTabs() {
 		tabsEl.innerHTML = '';
@@ -108,11 +87,7 @@ function GUI(utils) {
 			const b = utils.el('div', {
 				cls: 'tab',
 				text: t.label,
-				listeners: {
-					click: () => {
-						setActiveTab(t.id);
-					}
-				}
+				listeners: { click: () => setActiveTab(t.id) }
 			});
 			b.dataset.tabId = t.id;
 			if (t.id === activeTab) b.classList.add('active');
@@ -126,33 +101,26 @@ function GUI(utils) {
 		renderContent();
 	}
 
-	function rowLabel(text) {
-		const r = utils.el('div', {
-			cls: 'ov-row'
-		});
-		const l = utils.el('label', {
-			text
-		});
+	function heading(text) {
+		return utils.el('div', { html: `<strong>${text}</strong>` });
+	}
+
+	function row(labelText) {
+		const r = utils.el('div', { cls: 'ov-row' });
+		const l = utils.el('label', { text: labelText });
 		l.style.fontSize = '13px';
 		r.appendChild(l);
-		return {
-			row: r,
-			label: l
-		};
+		return r;
 	}
 
 	function makeToggle(state, onChange) {
-		const t = utils.el('div', {
-			cls: 'ov-toggle'
-		});
-		const k = utils.el('div', {
-			cls: 'knob'
-		});
+		const t = utils.el('div', { cls: 'ov-toggle' });
+		const k = utils.el('div', { cls: 'knob' });
 		t.appendChild(k);
 		t.dataset.on = state ? 1 : 0;
 		if (state) k.style.transform = 'translateX(22px)';
 		t.addEventListener('click', () => {
-			const now = t.dataset.on === '1' ? false : true;
+			const now = t.dataset.on !== '1';
 			t.dataset.on = now ? 1 : 0;
 			k.style.transform = now ? 'translateX(22px)' : '';
 			onChange(now);
@@ -160,556 +128,267 @@ function GUI(utils) {
 		return t;
 	}
 
+	function toggleRow(labelText, state, onChange) {
+		const r = row(labelText);
+		r.appendChild(makeToggle(state, onChange));
+		return r;
+	}
+
+	function colorRow(labelText, value, onChange) {
+		const r = row(labelText);
+		const input = utils.el('input', { attrs: { type: 'color', value } });
+		input.addEventListener('input', e => onChange(e.target.value));
+		r.appendChild(input);
+		return r;
+	}
+
+	function rangeRow(labelText, { min, max, step, value }, onChange) {
+		const r = row(labelText);
+		const input = utils.el('input', { attrs: { type: 'range', min, max, step, value } });
+		input.addEventListener('input', e => onChange(Number(e.target.value)));
+		r.appendChild(input);
+		return r;
+	}
+
+	function selectRow(labelText, options, value, onChange) {
+		const r = row(labelText);
+		const select = utils.el('select', { cls: 'ov-select' });
+		Object.entries(options).forEach(([k, display]) => {
+			const o = utils.el('option', { text: display });
+			o.value = k;
+			if (value === k) o.selected = true;
+			select.appendChild(o);
+		});
+		select.addEventListener('change', e => onChange(e.target.value));
+		r.appendChild(select);
+		return r;
+	}
+
+	function buttonRow(labelText, buttonText, onClick) {
+		const r = row(labelText);
+		r.appendChild(utils.el('button', { text: buttonText, cls: 'ov-btn', listeners: { click: onClick } }));
+		return r;
+	}
 
 	function renderContent() {
 		contentEl.innerHTML = '';
+
 		if (activeTab === 'main') {
-			contentEl.appendChild(utils.el('div', {
-				html: '<strong>Quick Controls</strong>'
-			}));
-			contentEl.appendChild(utils.el('div', {
-				html: '<strong>Check xliam.xyz for updates every week</strong>'
-			}));
-			const resRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			resRow.appendChild(utils.el('label', {
-				text: 'Resource Swapper (Reload Client)'
-			}));
-			resRow.appendChild(makeToggle(settings.swapper, v => {
+			contentEl.appendChild(heading('Quick Controls'));
+			contentEl.appendChild(heading('Check xliam.xyz for updates every week'));
+
+			contentEl.appendChild(toggleRow('Resource Swapper (Reload Client)', settings.swapper, v => {
 				settings.swapper = v;
 				save();
 			}));
-			const discordRPC = utils.el('div', {
-				cls: 'ov-row'
-			});
-			discordRPC.appendChild(utils.el('label', {
-				text: 'Discord RPC'
-			}));
-			discordRPC.appendChild(makeToggle(settings.rpc, v => {
+
+			contentEl.appendChild(toggleRow('Discord RPC', settings.rpc, v => {
 				settings.rpc = v;
 				save();
 			}));
-			contentEl.appendChild(discordRPC);
-			const fullscreenRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			fullscreenRow.appendChild(utils.el('label', {
-				text: 'Open in fullscreen'
-			}));
-			fullscreenRow.appendChild(makeToggle(settings.largewindow, v => {
+
+			contentEl.appendChild(toggleRow('Open in fullscreen', settings.largewindow, v => {
 				settings.largewindow = v;
 				save();
 			}));
-			contentEl.appendChild(fullscreenRow);
 
-			const upcapFPSRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			upcapFPSRow.appendChild(utils.el('label', {
-				text: 'Uncap FPS'
-			}));
-			upcapFPSRow.appendChild(makeToggle(settings.disableFrameRateLimit, v => {
+			contentEl.appendChild(toggleRow('Uncap FPS', settings.disableFrameRateLimit, v => {
 				settings.disableFrameRateLimit = v;
 				settings.forceHighPerformanceGPU = v;
 				save();
 			}));
-			contentEl.appendChild(upcapFPSRow);
 
-			const statRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			statRow.appendChild(utils.el('label', {
-				text: 'Stats Overlay'
-			}));
-			statRow.appendChild(makeToggle(settings.showStats, v => {
+			contentEl.appendChild(toggleRow('Stats Overlay', settings.showStats, v => {
 				settings.showStats = v;
 				save();
-				updateOverlay("dsOverlayStats");
+				updateOverlay('dsOverlayStats');
 			}));
-			contentEl.appendChild(statRow);
 
-			const keyRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			keyRow.appendChild(utils.el('label', {
-				text: 'Keys Overlay'
-			}));
-			keyRow.appendChild(makeToggle(settings.showOverlay, v => {
+			contentEl.appendChild(toggleRow('Keys Overlay', settings.showOverlay, v => {
 				settings.showOverlay = v;
 				save();
-				updateOverlay("keyDisplayOverlay");
+				updateOverlay('keyDisplayOverlay');
 			}));
-			contentEl.appendChild(keyRow);
 
-			const crossRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			crossRow.appendChild(utils.el('label', {
-				text: 'Crosshair'
-			}));
-			crossRow.appendChild(makeToggle(settings.crossEnable, v => {
+			contentEl.appendChild(toggleRow('Crosshair', settings.crossEnable, v => {
 				settings.crossEnable = v;
 				save();
 				updateCrosshair();
 			}));
-			contentEl.appendChild(crossRow);
 
-			const gifRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			gifRow.appendChild(utils.el('label', {
-				text: 'GIF'
-			}));
-			gifRow.appendChild(makeToggle(settings.showAnimeGif, v => {
+			contentEl.appendChild(toggleRow('GIF', settings.showAnimeGif, v => {
 				settings.showAnimeGif = v;
 				save();
 				updateGif();
 			}));
-			contentEl.appendChild(gifRow);
-
 		}
 
 		if (activeTab === 'stats') {
-			contentEl.appendChild(utils.el('div', {
-				html: '<strong>Stats Overlay</strong>'
-			}));
+			contentEl.appendChild(heading('Stats Overlay'));
 
-			const enRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			enRow.appendChild(utils.el('label', {
-				text: 'Enable'
-			}));
-			enRow.appendChild(makeToggle(settings.showStats, v => {
+			contentEl.appendChild(toggleRow('Enable', settings.showStats, v => {
 				settings.showStats = v;
 				save();
-				updateOverlay("dsOverlayStats");
+				updateOverlay('dsOverlayStats');
 			}));
-			contentEl.appendChild(enRow);
 
-			[{
-				label: "Show Date",
-				key: "showDate"
-			},
-			{
-				label: "Show Time",
-				key: "showTime"
-			},
-			{
-				label: "Show OS",
-				key: "showOS"
-			},
-			{
-				label: "Show CPU",
-				key: "showCPU"
-			},
-			{
-				label: "Show Sens",
-				key: "showSens"
-			},
-			{
-				label: "Show FPS",
-				key: "showFPS"
-			},
-			{
-				label: "Show Ping",
-				key: "showPing"
-			}
-			].forEach(opt => {
-
-				const row = utils.el('div', {
-					cls: 'ov-row'
-				});
-				row.appendChild(utils.el('label', {
-					text: opt.label
+			const statFields = [
+				['Show Date', 'showDate'],
+				['Show Time', 'showTime'],
+				['Show OS', 'showOS'],
+				['Show CPU', 'showCPU'],
+				['Show Sens', 'showSens'],
+				['Show FPS', 'showFPS'],
+				['Show Ping', 'showPing'],
+			];
+			statFields.forEach(([label, key]) => {
+				contentEl.appendChild(toggleRow(label, utils.getRaw(key) !== 'false', v => {
+					utils.setRaw(key, v);
 				}));
-				row.appendChild(makeToggle(utils.getRaw(opt.key) !== "false", v => {
-					utils.setRaw(opt.key, v);
-				}));
-				contentEl.appendChild(row);
-
 			});
 		}
 
-/*
+		/*
 		if (activeTab === 'skins') {
-			console.log('activeTab:', activeTab);
-
-			contentEl.appendChild(utils.el('div', {
-				html: '<strong>Skin Selector</strong>'
-			}));
-
-			contentEl.appendChild(utils.el('div', {
-				html: 'Reload to apply changes<br>Order: AR, SMG, AWP, Shotgun'
-			}));
+			contentEl.appendChild(heading('Skin Selector'));
+			contentEl.appendChild(utils.el('div', { html: 'Reload to apply changes<br>Order: AR, SMG, AWP, Shotgun' }));
 
 			const weapons = [
 				{ key: 'ar', label: 'Assault Rifle' },
 				{ key: 'smg', label: 'SMG' },
 				{ key: 'awp', label: 'AWP' },
-				{ key: 'shotgun', label: 'Shotgun' }
+				{ key: 'shotgun', label: 'Shotgun' },
 			];
 
 			weapons.forEach(weapon => {
-				const row = utils.el('div', { cls: 'ov-row' });
-				row.appendChild(utils.el('label', { text: weapon.label }));
-
-				const select = utils.el('select', { cls: 'ov-select' });
-
-				Object.entries(SKIN_OPTIONS).forEach(([value, displayName]) => {
-			
-					const option = utils.el('option', { text: displayName });
-					option.value = value;
-					if (settings.selectedSkins[weapon.key] === value) {
-						option.selected = true;
-					}
-					select.appendChild(option);
-				});
-
-				select.addEventListener('change', (e) => {
-					settings.selectedSkins[weapon.key] = e.target.value;
+				contentEl.appendChild(selectRow(weapon.label, SKIN_OPTIONS, settings.selectedSkins[weapon.key], v => {
+					settings.selectedSkins[weapon.key] = v;
 					save();
-					console.log(`Selected ${weapon.label}: ${e.target.value}`);
-				});
-
-				row.appendChild(select);
-				contentEl.appendChild(row);
+				}));
 			});
 		}
-*/
+		*/
+
 		if (activeTab === 'cross') {
-			contentEl.appendChild(utils.el('div', {
-				html: '<strong>Crosshair Editor</strong>'
-			}));
-			const enRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			enRow.appendChild(utils.el('label', {
-				text: 'Enable'
-			}));
-			enRow.appendChild(makeToggle(settings.crossEnable, v => {
+			contentEl.appendChild(heading('Crosshair Editor'));
+
+			contentEl.appendChild(toggleRow('Enable', settings.crossEnable, v => {
 				settings.crossEnable = v;
 				save();
 				updateCrosshair();
 			}));
-			contentEl.appendChild(enRow);
-			const colorRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			colorRow.appendChild(utils.el('label', {
-				text: 'Color'
-			}));
-			const colorInput = utils.el('input', {
-				attrs: {
-					type: 'color',
-					value: settings.crossColor
-				}
-			});
-			colorInput.addEventListener('input', e => {
-				settings.crossColor = e.target.value;
+
+			contentEl.appendChild(colorRow('Color', settings.crossColor, v => {
+				settings.crossColor = v;
 				save();
 				updateCrosshair();
-			});
-			colorRow.appendChild(colorInput);
-			contentEl.appendChild(colorRow);
-			const sizeRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			sizeRow.appendChild(utils.el('label', {
-				text: 'Size'
 			}));
-			const sizeInp = utils.el('input', {
-				attrs: {
-					type: 'range',
-					min: 4,
-					max: 300,
-					value: settings.crossSize
-				}
-			});
-			sizeInp.addEventListener('input', e => {
-				settings.crossSize = Number(e.target.value);
+
+			contentEl.appendChild(rangeRow('Size', { min: 4, max: 300, value: settings.crossSize }, v => {
+				settings.crossSize = v;
 				save();
 				updateCrosshair();
-			});
-			sizeRow.appendChild(sizeInp);
-			contentEl.appendChild(sizeRow);
-			const thickRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			thickRow.appendChild(utils.el('label', {
-				text: 'Thickness'
 			}));
-			const tInp = utils.el('input', {
-				attrs: {
-					type: 'range',
-					min: 1,
-					max: 28,
-					value: settings.crossThickness
-				}
-			});
-			tInp.addEventListener('input', e => {
-				settings.crossThickness = Number(e.target.value);
+
+			contentEl.appendChild(rangeRow('Thickness', { min: 1, max: 28, value: settings.crossThickness }, v => {
+				settings.crossThickness = v;
 				save();
 				updateCrosshair();
-			});
-			thickRow.appendChild(tInp);
-			contentEl.appendChild(thickRow);
-			const typeRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			typeRow.appendChild(utils.el('label', {
-				text: 'Type'
 			}));
-			const sel = utils.el('select', {
-				cls: 'ov-select'
-			});
-			Object.keys(CROSSHAIR_TEMPLATES).forEach(k => {
-				const o = utils.el('option', {
-					text: k
-				});
-				o.value = k;
-				if (settings.crossType === k) o.selected = true;
-				sel.appendChild(o);
-			});
-			sel.addEventListener('change', e => {
-				settings.crossType = e.target.value;
+
+			const crossTypeOptions = Object.fromEntries(Object.keys(CROSSHAIR_TEMPLATES).map(k => [k, k]));
+			contentEl.appendChild(selectRow('Type', crossTypeOptions, settings.crossType, v => {
+				settings.crossType = v;
 				save();
 				updateCrosshair();
-			});
-			typeRow.appendChild(sel);
-			contentEl.appendChild(typeRow);
+			}));
+
 			updateCrosshair();
 		}
 
 		if (activeTab === 'gif') {
-			contentEl.appendChild(utils.el('div', {
-				html: '<strong>GIF Overlay</strong>'
-			}));
-			const sRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			sRow.appendChild(utils.el('label', {
-				text: 'Enable'
-			}));
-			sRow.appendChild(makeToggle(settings.showAnimeGif, v => {
+			contentEl.appendChild(heading('GIF Overlay'));
+
+			contentEl.appendChild(toggleRow('Enable', settings.showAnimeGif, v => {
 				settings.showAnimeGif = v;
 				save();
 				updateGif();
 			}));
-			contentEl.appendChild(sRow);
 
-			const scaleRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			scaleRow.appendChild(utils.el('label', {
-				text: 'Scale'
-			}));
-			const scaleRange = utils.el('input', {
-				attrs: {
-					type: 'range',
-					min: 0.1,
-					max: 2,
-					step: 0.05,
-					value: settings.animeGifScale || 0.6
-				}
-			});
-			scaleRange.addEventListener('input', e => {
-				settings.animeGifScale = Number(e.target.value);
+			contentEl.appendChild(rangeRow('Scale', { min: 0.1, max: 2, step: 0.05, value: settings.animeGifScale || 0.6 }, v => {
+				settings.animeGifScale = v;
 				save();
 				updateGif();
-			});
-			scaleRow.appendChild(scaleRange);
-			contentEl.appendChild(scaleRow);
+			}));
 		}
 
 		if (activeTab === 'theme') {
-			contentEl.appendChild(utils.el('div', {
-				html: '<strong>Theme Editor</strong>'
-			}));
-			const accRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			accRow.appendChild(utils.el('label', {
-				text: 'Accent Color'
-			}));
-			const accInp = utils.el('input', {
-				attrs: {
-					type: 'color',
-					value: settings.themeData?.accent || '#8da4ff'
-				}
-			});
-			accInp.addEventListener('input', e => {
-				settings.themeData = settings.themeData || {};
-				settings.themeData.accent = e.target.value;
-				applyTheme(settings.themeData);
-				save();
-			});
-			accRow.appendChild(accInp);
-			contentEl.appendChild(accRow);
-			const textRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			textRow.appendChild(utils.el('label', {
-				text: 'Overlay Text Color'
-			}));
-			const textInp = utils.el('input', {
-				attrs: {
-					type: 'color',
-					value: settings.themeData?.text3 || '#8da4ff'
-				}
-			});
-			textInp.addEventListener('input', e => {
-				settings.themeData = settings.themeData || {};
-				settings.themeData.text3 = e.target.value;
-				applyTheme(settings.themeData);
-				save();
-			});
-			textRow.appendChild(textInp);
-			contentEl.appendChild(textRow);
-			const bgRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			bgRow.appendChild(utils.el('label', {
-				text: 'Background Opacity'
-			}));
-			const bgInp = utils.el('input', {
-				attrs: {
-					type: 'range',
-					min: 0.15,
-					max: 1,
-					step: 0.05,
-					value: settings.themeData?.bgOpacity || 0.6
-				}
-			});
-			bgInp.addEventListener('input', e => {
-				settings.themeData = settings.themeData || {};
-				settings.themeData.bgOpacity = Number(e.target.value);
-				applyTheme(settings.themeData);
-				save();
-			});
-			bgRow.appendChild(bgInp);
-			contentEl.appendChild(bgRow);
+			contentEl.appendChild(heading('Theme Editor'));
 
-			const movRow = utils.el('div', {
-				cls: 'ov-row'
+			const colorFields = [
+				['Accent Color', 'accent'],
+				['Overlay Text Color', 'text3'],
+				['Movement Keys Color', 'red1'],
+				['Actions Keys Color', 'red2'],
+			];
+			colorFields.forEach(([label, key]) => {
+				contentEl.appendChild(colorRow(label, settings.themeData?.[key] || '#8da4ff', v => {
+					settings.themeData = settings.themeData || {};
+					settings.themeData[key] = v;
+					applyTheme(settings.themeData);
+					save();
+				}));
 			});
-			movRow.appendChild(utils.el('label', {
-				text: 'Movement Keys Color'
-			}));
-			const movInp = utils.el('input', {
-				attrs: {
-					type: 'color',
-					value: settings.themeData?.red1 || '#8da4ff'
-				}
-			});
-			movInp.addEventListener('input', e => {
-				settings.themeData = settings.themeData || {};
-				settings.themeData.red1 = e.target.value;
-				applyTheme(settings.themeData);
-				save();
-			});
-			movRow.appendChild(movInp);
-			contentEl.appendChild(movRow);
 
-			const actRow = utils.el('div', {
-				cls: 'ov-row'
-			});
-			actRow.appendChild(utils.el('label', {
-				text: 'Actions Keys Color'
-			}));
-			const actInp = utils.el('input', {
-				attrs: {
-					type: 'color',
-					value: settings.themeData?.red2 || '#8da4ff'
-				}
-			});
-			actInp.addEventListener('input', e => {
+			contentEl.appendChild(rangeRow('Background Opacity', { min: 0.15, max: 1, step: 0.05, value: settings.themeData?.bgOpacity || 0.6 }, v => {
 				settings.themeData = settings.themeData || {};
-				settings.themeData.red2 = e.target.value;
+				settings.themeData.bgOpacity = v;
 				applyTheme(settings.themeData);
 				save();
-			});
-			actRow.appendChild(actInp);
-			contentEl.appendChild(actRow);
+			}));
 		}
 
 		if (activeTab === 'other') {
-
 			const fmtKey = k => (k === ' ' ? 'Space' : k || '');
 
 			const kb = utils.el('div', {
 				cls: 'ov-row',
-				style: {
-					display: 'flex',
-					flexDirection: 'column',
-					gap: '4px'
-				}
+				style: { display: 'flex', flexDirection: 'column', gap: '4px' }
 			});
+			kb.appendChild(utils.el('label', { text: 'Toggle Key (click then press a key)' }));
 
-			kb.appendChild(utils.el('label', {
-				text: 'Toggle Key (click then press a key)'
-			}));
-
-			const i = utils.el('input', {
+			const keyInput = utils.el('input', {
 				cls: 'ov-input',
-				attrs: {
-					type: 'text',
-					value: fmtKey(settings.toggleKey),
-					placeholder: 'Press a key...'
-				}
+				attrs: { type: 'text', value: fmtKey(settings.toggleKey), placeholder: 'Press a key...' }
 			});
-			i.readOnly = true;
-
-			i.addEventListener('keydown', e => {
-				e.preventDefault();     
-				e.stopPropagation();   
-
-				if (e.key === 'Escape') { i.blur(); return; }  
-
+			keyInput.readOnly = true;
+			keyInput.addEventListener('keydown', e => {
+				e.preventDefault();
+				e.stopPropagation();
+				if (e.key === 'Escape') {
+					keyInput.blur();
+					return;
+				}
 				settings.toggleKey = e.key;
-				i.value = fmtKey(e.key);
+				keyInput.value = fmtKey(e.key);
 				document.getElementById('ov-toggle-key').textContent = fmtKey(e.key);
 				save();
-				i.blur();
+				keyInput.blur();
 			});
-
-			kb.appendChild(i);
+			kb.appendChild(keyInput);
 			contentEl.appendChild(kb);
 
-			const rankRow = utils.el('div', { cls: 'ov-row' });
-			rankRow.appendChild(utils.el('label', { text: 'Player Rank' }));
-			const rankBtn = utils.el('button', {
-				text: 'Get Rank',
-				cls: 'ov-btn',
-				listeners: {
-					click: () => {
-						if (typeof getRank === 'function') {
-							getRank();
-						} else {
-							console.warn('getRank() is not defined');
-						}
-					}
+			contentEl.appendChild(buttonRow('Player Rank', 'Get Rank', () => {
+				if (typeof getRank === 'function') {
+					getRank();
+				} else {
+					console.warn('getRank() is not defined');
 				}
-			});
-			rankRow.appendChild(rankBtn);
-			contentEl.appendChild(rankRow);
+			}));
 
-			const debugRow = utils.el('div', { cls: 'ov-row' });
-			debugRow.appendChild(utils.el('label', { text: 'Debug' }));
-			const debugBtn = utils.el('button', {
-				text: 'Show State',
-				cls: 'ov-btn',
-				listeners: {
-					click: () => alert(JSON.stringify(settings, null, 2))
-				}
-			});
-			debugRow.appendChild(debugBtn);
-			contentEl.appendChild(debugRow);
-
+			contentEl.appendChild(buttonRow('Debug', 'Show State', () => alert(JSON.stringify(settings, null, 2))));
 		}
 	}
-
 
 	function applyTheme(td) {
 		if (!td) return;
@@ -815,8 +494,8 @@ function GUI(utils) {
 	}, 5000);
 
 	function isOverlaySupposedToBeOn() {
-		if (!settings.showOverlay) updateOverlay("keyDisplayOverlay")
-		if (!settings.showStats) updateOverlay("dsOverlayStats")
+		if (!settings.showOverlay) updateOverlay("keyDisplayOverlay");
+		if (!settings.showStats) updateOverlay("dsOverlayStats");
 	}
 
 	async function fetchLeaderboardRank(username) {
@@ -851,7 +530,7 @@ function GUI(utils) {
 			return "Daily: Error\nWeekly: Error\nAll-time: Error";
 		}
 	}
-	
+
 	function getRank() {
 		const overlay = document.createElement('div');
 		overlay.style.cssText = `
@@ -892,7 +571,7 @@ function GUI(utils) {
 		`;
 
 		const title = document.createElement('span');
-		title.textContent = 'Rank Lookup';
+		title.textContent = 'Rank Lookup (if it dont let u click inside alt+tab)';
 		title.style.cssText = `font-size: 14px; font-weight: 600; color: var(--ov-text);`;
 
 		const closeBtn = document.createElement('button');
@@ -1001,11 +680,10 @@ function GUI(utils) {
 	ensureOverlays();
 	updateCrosshair();
 	updateGif();
+
 	addEventListener('keydown', (e) => {
-	if (e.key.toLowerCase() === (settings.toggleKey || 'o').toLowerCase()) {
-		gui.style.display = gui.style.display === 'none' ? '' : 'none';
-	}});
+		if (e.key.toLowerCase() === (settings.toggleKey || 'o').toLowerCase()) {
+			gui.style.display = gui.style.display === 'none' ? '' : 'none';
+		}
+	});
 }
-
-
-module.exports = { GUI }

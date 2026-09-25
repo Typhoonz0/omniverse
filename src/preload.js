@@ -1,4 +1,3 @@
-const raw = process.argv.find(a => a.startsWith("--settings="));
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("omniverse", {

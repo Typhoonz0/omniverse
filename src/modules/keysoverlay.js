@@ -116,5 +116,3 @@ function KeysOverlay(utils, theme) {
         storageKey: 'keyDisplayOverlay'
     });
 }
-
-module.exports = { KeysOverlay };
